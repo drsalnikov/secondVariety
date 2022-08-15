@@ -1,0 +1,75 @@
+﻿@page "/Objects"
+
+@using Microsoft.EntityFrameworkCore
+@using SecondVariety.Models;
+@using SecondVariety.Data;
+
+@inject NavigationManager nav
+@inject db1Context db1Context
+
+<h1>Объекты</h1>
+
+<p>Описание.</p>
+
+    <RadzenDataGrid 
+        AllowFiltering="true" 
+        AllowColumnResize="true" 
+        FilterMode="FilterMode.Advanced" 
+        AllowSorting="true" 
+        PageSize="5" 
+        AllowPaging="true" 
+        PagerHorizontalAlign="HorizontalAlign.Left" 
+        SelectionMode="DataGridSelectionMode.Single"
+        ShowPagingSummary="true"
+        Data="@objects" 
+        TItem="SecondVariety.Models.Object" 
+        ColumnWidth="480px" 
+        LogicalFilterOperator="LogicalFilterOperator.Or"
+        IsLoading="@isLoading"
+        Count="@count"
+        LoadData="@LoadData"
+        >
+        <Columns>
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="Kod" Title="Код" Width="70px" TextAlign="TextAlign.Center" />
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="Name" Title="Наименование" Width="140px" />
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="LastTo" Title="Дата последнего ТО"  FormatString="{0:d}" Width="140px"/>
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="NextTo" Title="Дата следующего ТО"  FormatString="{0:d}" Width="140px"/>
+            <RadzenDataGridColumn Width="150px" TItem="SecondVariety.Models.Object" Property="ObjectKod" Title="Информация об объекте">
+              <Template Context="data">
+                  <RadzenButton ButtonStyle="ButtonStyle.Info" Icon="info" Class="m-1" Click=@(args => OpenObject(data.Kod)) />
+              </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+
+@code {
+  private IEnumerable<SecondVariety.Models.Object> objects = Enumerable.Empty<SecondVariety.Models.Object>();
+  private bool isLoading;
+  private int count;
+  // RadzenDataGrid<MyObject> grid;
+  //public ObjectListView(IEnumerable<Models.Object> objects) => this.objects = objects;
+
+  protected override async Task OnInitializedAsync()
+  {
+    await base.OnInitializedAsync();
+    await LoadData();
+  }
+
+  async Task LoadData()
+  {
+    isLoading = true;
+    await Task.Yield();
+
+    objects = db1Context.Objects.AsEnumerable();
+    count = objects.Count();
+    isLoading = false;
+  }
+
+  void OpenObject(int? kod)
+  {
+    if (kod.HasValue)
+    {
+      nav.NavigateTo(String.Format("Objects/{0}", kod.ToString()), true);  
+    }
+  }
+}

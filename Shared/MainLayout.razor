@@ -1,0 +1,27 @@
+﻿@inherits LayoutComponentBase
+
+<PageTitle>SecondVariety</PageTitle>
+
+<div class="page">
+
+    <div class="top-row">
+        <LoginDisplay />            
+    </div>
+
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+
+        <article class="content px-4">
+            @Body
+        </article>
+
+        <RadzenDialog/>
+        <RadzenNotification/>
+        <RadzenContextMenu/>
+        <RadzenTooltip/>
+    </main>
+
+</div>

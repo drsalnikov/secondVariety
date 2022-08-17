@@ -7,6 +7,6 @@ namespace SecondVariety.Models
     {
         public int? KodObject { get; set; }
         public DateOnly? Data { get; set; }
-        public int? Val { get; set; }
+        public float? Val { get; set; }
     }
 }

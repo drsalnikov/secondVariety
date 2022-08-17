@@ -1,0 +1,80 @@
+﻿@page "/requests"
+
+@using Microsoft.EntityFrameworkCore
+@using SecondVariety.Models;
+@using SecondVariety.Data;
+
+@inject db1Context db1context
+
+    <RadzenDataGrid 
+          AllowFiltering="true" 
+          AllowSorting="true" 
+          PageSize="10" 
+          ShowPagingSummary="true"
+          Data="@requests" 
+          TItem="MyRequest" 
+          ColumnWidth="480px" 
+          IsLoading="@isLoading"
+          LoadData="@LoadData"
+          >
+          <Columns>
+              <RadzenDataGridColumn TItem="MyRequest" Property="Num" Title="Номер" Width="75px" TextAlign="TextAlign.Center" />
+              <RadzenDataGridColumn TItem="MyRequest" Property="Data" Title="Дата" FormatString="{0:d}" Width="150px" />
+              <RadzenDataGridColumn TItem="MyRequest" Property="KodObject" Title="Код объекта" Width="75px"/>
+              <RadzenDataGridColumn TItem="MyRequest" Property="NameObject" Title="Наименование объекта" Width="150px"/>
+              <RadzenDataGridColumn TItem="MyRequest" Property="DateFrom" Title="Дата начала работ(план)" FormatString="{0:d}" Width="150px"/>
+              <RadzenDataGridColumn TItem="MyRequest" Property="DateTo" Title="Дата окончания работ(план)" FormatString="{0:d}" Width="150px"/>
+              <RadzenDataGridColumn TItem="MyRequest" Property="DateFromFakt" Title="Дата начала работ(факт)" FormatString="{0:d}" Width="150px"/>
+              <RadzenDataGridColumn TItem="MyRequest" Property="DateToFakt" Title="Дата окончания работ(факт)" FormatString="{0:d}" Width="150px"/>
+              <RadzenDataGridColumn TItem="MyRequest" Property="Status" Title="Статус" Width="75px" />
+          </Columns>
+    </RadzenDataGrid>
+
+
+@code {
+  EventConsole console;
+
+  private IEnumerable<MyRequest> requests = Enumerable.Empty<MyRequest>();
+  private bool isLoading;
+  private int countRequests;
+
+  protected override async Task OnInitializedAsync()
+  {
+    await base.OnInitializedAsync();
+    await LoadData();
+  }
+
+  async Task LoadData()
+  {
+    isLoading = true;
+
+    await Task.Yield();
+
+    requests = (from r in db1context.Requests
+               join o in db1context.Objects on r.KodObject equals o.Kod
+               select new MyRequest
+                 {
+                   Num = r.Num,
+                   Data = r.Data,
+                   KodObject = r.KodObject,
+                   NameObject = o.Name,
+                   DateFrom = r.DateFrom,
+                   DateTo = r.DateTo,
+                   DateFromFakt = r.DateFromFakt,
+                   DateToFakt = r.DateToFakt,
+                   Status = r.Status
+                 }).AsEnumerable();
+
+
+    //countRequests = requests.Count();
+
+    isLoading = false;
+
+  }
+
+  void Submit(MyObject arg)
+  {
+      console.Log(arg);
+  }
+
+}

@@ -7,16 +7,16 @@ namespace SecondVariety.Models
     {
         public int? Kod { get; set; }
         public string? Name { get; set; }
-        public int? TekNar { get; set; }
+        public float? TekNar { get; set; }
         public DateOnly? LastTo { get; set; }
         public int? ToTime { get; set; }
-        public int? ToNar { get; set; }
-        public int? PlanYear { get; set; }
+        public float? ToNar { get; set; }
+        public float? PlanYear { get; set; }
         public float? Koef2 { get; set; }
         public float? Koef1 { get; set; }
-        public int? SredNar { get; set; }
+        public float? SredNar { get; set; }
         public DateOnly? DateFrom { get; set; }
-        public int? NarFrom { get; set; }
+        public float? NarFrom { get; set; }
         public DateOnly? NextTo { get; set; }
     }
 
@@ -24,16 +24,16 @@ namespace SecondVariety.Models
   {
     public int Kod { get; set; }
     public string Name { get; set; }
-    public int TekNar { get; set; }
+    public float TekNar { get; set; }
     public DateOnly LastTo { get; set; }
-    public int ToTime { get; set; }
-    public int ToNar { get; set; }
-    public int PlanYear { get; set; }
+    public float ToTime { get; set; }
+    public float ToNar { get; set; }
+    public float PlanYear { get; set; }
     public float Koef2 { get; set; }
     public float Koef1 { get; set; }
-    public int SredNar { get; set; }
+    public float SredNar { get; set; }
     public DateOnly DateFrom { get; set; }
-    public int NarFrom { get; set; }
+    public float NarFrom { get; set; }
     public DateOnly NextTo { get; set; }
 
     public MyObject(SecondVariety.Models.Object baseObject)
@@ -45,8 +45,8 @@ namespace SecondVariety.Models
       ToTime = baseObject.ToTime.HasValue ? baseObject.ToTime.Value : 0;
       ToNar = baseObject.ToNar.HasValue ? baseObject.ToNar.Value : 0;
       PlanYear = baseObject.PlanYear.HasValue ? baseObject.PlanYear.Value : 0;
-      Koef1 = baseObject.Koef1.HasValue ? baseObject.Koef1.Value : float.NaN;
-      Koef2 = baseObject.Koef2.HasValue ? baseObject.Koef2.Value : float.NaN;
+      Koef1 = baseObject.Koef1.HasValue ? baseObject.Koef1.Value : 0;
+      Koef2 = baseObject.Koef2.HasValue ? baseObject.Koef2.Value : 0;
       SredNar = baseObject.SredNar.HasValue ? baseObject.SredNar.Value : 0;
       DateFrom = baseObject.DateFrom.HasValue ? baseObject.DateFrom.Value : DateOnly.MinValue;
       NextTo = baseObject.NextTo.HasValue ? baseObject.NextTo.Value : DateOnly.MinValue;
@@ -62,8 +62,8 @@ namespace SecondVariety.Models
       ToTime = 0;
       ToNar = 0;
       PlanYear = 0;
-      Koef1 = float.NaN;
-      Koef2 = float.NaN;
+      Koef1 = 0;
+      Koef2 = 0;
       SredNar = 0;
       DateFrom = DateOnly.MinValue;
       NextTo = DateOnly.MinValue;

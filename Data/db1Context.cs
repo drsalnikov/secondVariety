@@ -1,5 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SecondVariety.Models;
+using System;
+using System.Configuration;
+using Object = SecondVariety.Models.Object;
 
 namespace SecondVariety.Data
 {
@@ -15,26 +18,27 @@ namespace SecondVariety.Data
         }
 
         public virtual DbSet<Narabotka> Narabotkas { get; set; } = null!;
-        public virtual DbSet<SecondVariety.Models.Object> Objects { get; set; } = null!;
+        public virtual DbSet<Object> Objects { get; set; } = null!;
         public virtual DbSet<Request> Requests { get; set; } = null!;
-        public virtual DbSet<Test> Tests { get; set; } = null!;
+        public virtual DbSet<Telemetry> Telemetry { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            if (!optionsBuilder.IsConfigured)
-            {
+          if (!optionsBuilder.IsConfigured)
+          {
+            var builder = WebApplication.CreateBuilder();
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+              ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-                //ConfigurationManager.ConnectionStrings["BloggingDatabase"]
-
-                optionsBuilder.UseNpgsql("Host=rc1b-rl9fvpwjlmvph5d3.mdb.yandexcloud.net:6432;Database=db1;Username=user2;Password=Y!rsgq9itH8P8R4");
-            }
+            optionsBuilder.UseNpgsql(connectionString);
+          }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Narabotka>(entity =>
             {
-                entity.HasNoKey();
+                //entity.HasNoKey();
 
                 entity.ToTable("narabotka");
 
@@ -43,11 +47,13 @@ namespace SecondVariety.Data
                 entity.Property(e => e.KodObject).HasColumnName("kod_object");
 
                 entity.Property(e => e.Val).HasColumnName("val");
+
+                entity.Property(e => e.id).HasColumnName("id");
             });
 
-            modelBuilder.Entity<SecondVariety.Models.Object>(entity =>
+            modelBuilder.Entity<Object>(entity =>
             {
-                entity.HasNoKey();
+                //entity.HasNoKey();
 
                 entity.ToTable("objects");
 
@@ -80,7 +86,6 @@ namespace SecondVariety.Data
 
             modelBuilder.Entity<Request>(entity =>
             {
-                entity.HasNoKey();
 
                 entity.ToTable("request");
 
@@ -103,15 +108,21 @@ namespace SecondVariety.Data
                 entity.Property(e => e.Status).HasColumnName("status");
             });
 
-            modelBuilder.Entity<Test>(entity =>
+            modelBuilder.Entity<Telemetry>(entity =>
             {
-                entity.HasNoKey();
+              //entity.HasNoKey();
 
-                entity.ToTable("test");
+              entity.ToTable("telemetry");
 
-                entity.Property(e => e.Column1)
-                    .HasColumnType("character varying")
-                    .HasColumnName("column1");
+              entity.Property(e => e.id).HasColumnName("id");
+
+              entity.Property(e => e.type).HasColumnName("type");
+
+              entity.Property(e => e.period).HasColumnName("period");
+
+              entity.Property(e => e.value).HasColumnName("value");
+
+              entity.Property(e => e.kod_object).HasColumnName("kod_object");
             });
 
             OnModelCreatingPartial(modelBuilder);

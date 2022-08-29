@@ -4,39 +4,62 @@
 @using SecondVariety.Models;
 @using SecondVariety.Data;
 
+@inject NavigationManager nav
 @inject db1Context db1context
+@inject ContextMenuService ContextMenuService
 
+  <h1>Заявки</h1>
+  <div class="row gap-3">
+    <RadzenFieldset Text="Действия" class="gap-3">
+      <RadzenButton 
+        Click=@OnAddNewClick
+        Text="Создать" 
+        Icon="add_circle_outline" 
+        ButtonStyle="ButtonStyle.Primary" />
+    </RadzenFieldset>
+  </div>
+  <div class="row gap-3">
     <RadzenDataGrid 
-          AllowFiltering="true" 
-          AllowSorting="true" 
-          PageSize="10" 
-          ShowPagingSummary="true"
-          Data="@requests" 
-          TItem="MyRequest" 
-          ColumnWidth="480px" 
-          IsLoading="@isLoading"
-          LoadData="@LoadData"
-          >
-          <Columns>
-              <RadzenDataGridColumn TItem="MyRequest" Property="Num" Title="Номер" Width="75px" TextAlign="TextAlign.Center" />
-              <RadzenDataGridColumn TItem="MyRequest" Property="Data" Title="Дата" FormatString="{0:d}" Width="150px" />
-              <RadzenDataGridColumn TItem="MyRequest" Property="KodObject" Title="Код объекта" Width="75px"/>
-              <RadzenDataGridColumn TItem="MyRequest" Property="NameObject" Title="Наименование объекта" Width="150px"/>
-              <RadzenDataGridColumn TItem="MyRequest" Property="DateFrom" Title="Дата начала работ(план)" FormatString="{0:d}" Width="150px"/>
-              <RadzenDataGridColumn TItem="MyRequest" Property="DateTo" Title="Дата окончания работ(план)" FormatString="{0:d}" Width="150px"/>
-              <RadzenDataGridColumn TItem="MyRequest" Property="DateFromFakt" Title="Дата начала работ(факт)" FormatString="{0:d}" Width="150px"/>
-              <RadzenDataGridColumn TItem="MyRequest" Property="DateToFakt" Title="Дата окончания работ(факт)" FormatString="{0:d}" Width="150px"/>
-              <RadzenDataGridColumn TItem="MyRequest" Property="Status" Title="Статус" Width="75px" />
-          </Columns>
+              AllowFiltering="true" 
+              AllowSorting="true" 
+              PageSize="10" 
+              ShowPagingSummary="true"
+              Data="@myRequests" 
+              TItem="RequestDTO" 
+              ColumnWidth="480px" 
+              IsLoading="@isLoading"
+              SelectionMode="DataGridSelectionMode.Single" 
+              @bind-Value=@selectedRequest 
+              CellContextMenu="@OnCellContextMenu"
+              >
+              <Columns>
+                  <RadzenDataGridColumn TItem="RequestDTO" Property="Num" Title="Номер" Width="75px" TextAlign="TextAlign.Center" />
+                  <RadzenDataGridColumn TItem="RequestDTO" Property="Data" Title="Дата" FormatString="{0:d}" Width="150px" />
+                  <RadzenDataGridColumn TItem="RequestDTO" Property="KodObject" Title="Код объекта" Width="75px"/>
+                  <RadzenDataGridColumn TItem="RequestDTO" Property="NameObject" Title="Наименование объекта" Width="150px"/>
+                  <RadzenDataGridColumn TItem="RequestDTO" Property="DateFrom" Title="Дата начала работ(план)" FormatString="{0:d}" Width="150px"/>
+                  <RadzenDataGridColumn TItem="RequestDTO" Property="DateTo" Title="Дата окончания работ(план)" FormatString="{0:d}" Width="150px"/>
+                  <RadzenDataGridColumn TItem="RequestDTO" Property="DateFromFakt" Title="Дата начала работ(факт)" FormatString="{0:d}" Width="150px"/>
+                  <RadzenDataGridColumn TItem="RequestDTO" Property="DateToFakt" Title="Дата окончания работ(факт)" FormatString="{0:d}" Width="150px"/>
+                  <RadzenDataGridColumn TItem="RequestDTO" Property="Status" Title="Статус" Width="75px" />
+              </Columns>
     </RadzenDataGrid>
-
+  </div>
+  <div class="row gap-3">
+    <RadzenCard class="console-message">
+      <span class="console-message-text">*Для редактирования таблицы, используйте правую кнопку мыши.</span>
+    </RadzenCard>
+  </div>
 
 @code {
-  EventConsole console;
+  //EventConsole console;
 
-  private IEnumerable<MyRequest> requests = Enumerable.Empty<MyRequest>();
+  private IEnumerable<RequestDTO> myRequests = Enumerable.Empty<RequestDTO>();
+  //private IEnumerable<Request> requests = Enumerable.Empty<Request>();
+
   private bool isLoading;
-  private int countRequests;
+  //private int countRequests;
+  IList<RequestDTO> selectedRequest;
 
   protected override async Task OnInitializedAsync()
   {
@@ -50,9 +73,9 @@
 
     await Task.Yield();
 
-    requests = (from r in db1context.Requests
-               join o in db1context.Objects on r.KodObject equals o.Kod
-               select new MyRequest
+    myRequests = (from r in db1context.Requests
+                  join o in db1context.Objects on r.KodObject equals o.Kod
+                  select new RequestDTO
                  {
                    Num = r.Num,
                    Data = r.Data,
@@ -63,7 +86,9 @@
                    DateFromFakt = r.DateFromFakt,
                    DateToFakt = r.DateToFakt,
                    Status = r.Status
-                 }).AsEnumerable();
+                 })
+                 .OrderBy(o => o.Num)
+                 .AsEnumerable();
 
 
     //countRequests = requests.Count();
@@ -72,9 +97,55 @@
 
   }
 
-  void Submit(MyObject arg)
+  void OnAddNewClick()
   {
-      console.Log(arg);
+    nav.NavigateTo("/requests/new", true);
   }
 
-}
+  void Submit(RequestDTO arg)
+  {
+    //console.Log(arg);
+  }
+
+  void DeleteRequest(int? num)
+  {
+    if (!num.HasValue)
+      return;
+
+    Request? req = db1context.Requests.FirstOrDefault(r => r.Num == num);
+    if (req != null)
+    {
+      db1context.Requests.Remove(req);
+      db1context.SaveChanges();
+    }
+
+    nav.NavigateTo("/requests", true);
+  }
+
+
+  void OnCellContextMenu(DataGridCellMouseEventArgs<RequestDTO> args)
+  {
+    selectedRequest = new List<RequestDTO>() { args.Data };
+
+    ContextMenuService.Open(args,
+        new List<ContextMenuItem> {
+              new ContextMenuItem(){ Text = "Редактировать", Value = 1 },
+              new ContextMenuItem(){ Text = "Удалить", Value = 2 },
+          }, 
+          (e) => { 
+            switch (e.Value)
+            {
+              case 1:
+                nav.NavigateTo($"/requests/edit/{args.Data.Num}", true);
+                break;
+              case 2:
+                DeleteRequest(args.Data.Num);
+                break;
+            }
+
+            //console.Log($"e: {e.Value}. args: {args.Data.Num}."); 
+          }
+        );
+    }
+
+  }

@@ -1,0 +1,153 @@
+﻿@page "/analytics1"
+
+@using System;
+@using Microsoft.ML;
+@using Microsoft.ML.Data;
+@using System.Globalization;
+@using SecondVariety.Models;
+@using SecondVariety.Data;
+@using Object = SecondVariety.Models.Object
+
+@inject db1Context db1context
+@inject NavigationManager nav
+
+<h1>Аналитика ситуации 1</h1>
+<p>Описание ситуации 1...</p>
+<div class="container my-5">
+  <div class="row">
+      <div class="col">
+
+          <RadzenProgressBar ProgressBarStyle="ProgressBarStyle.Primary" Visible="@isLoading" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+          <p>Период обучения</p>
+          <RadzenChart>
+            <RadzenLineSeries Smooth="true" Data="@telemetryAll" CategoryProperty="period" Title="Тип 1" ValueProperty="value" RenderingOrder="1">
+                <RadzenSeriesTrendLine Visible="@trend" Stroke="red" LineType="LineType.Dashed" />
+                <RadzenSeriesMedianLine Visible="@median" Stroke="green" LineType="LineType.Dotted" />
+                <RadzenSeriesMeanLine Visible="@mean" Stroke="blue" LineType="LineType.Dotted" />
+                <RadzenSeriesModeLine Visible="@mode" Stroke="black" LineType="LineType.Dotted" />
+            </RadzenLineSeries>
+            <RadzenCategoryAxis Padding="20" Formatter="@FormatAsMonth" />
+            <RadzenValueAxis Formatter="@FormatAsValue">
+                <RadzenGridLines Visible="true" />
+                <RadzenAxisTitle Text="Измерение" />
+            </RadzenValueAxis>
+          </RadzenChart>
+          <p>Отклонение от нормы</p>
+          <RadzenChart>
+            <RadzenLineSeries Smooth="true" Data="@telemetry" CategoryProperty="period" Title="Тип 1" ValueProperty="value" RenderingOrder="2">
+            </RadzenLineSeries>
+            <RadzenLineSeries Smooth="true" Data="@telemetryPredicted" CategoryProperty="period" Title="Тип 1 (предсказанный)" ValueProperty="value" RenderingOrder="3">
+            </RadzenLineSeries>
+            <RadzenCategoryAxis Padding="20" Formatter="@FormatAsMonth" />
+            <RadzenValueAxis Formatter="@FormatAsValue">
+                <RadzenGridLines Visible="true" />
+                <RadzenAxisTitle Text="Измерение" />
+            </RadzenValueAxis>
+          </RadzenChart>
+      </div>
+  </div>
+  </div>
+@code {
+
+  private bool trend = true;
+  private bool median = true;
+  private bool mean = true;
+  private bool mode = true;
+  private bool isLoading;
+
+  private IList<Telemetry> telemetryAll = new List<Telemetry>();
+  private IList<Telemetry> telemetry = new List<Telemetry>();
+  private IList<Telemetry> telemetryPredicted = new List<Telemetry>();
+
+  protected override async Task OnInitializedAsync()
+  {
+    await base.OnInitializedAsync();
+    await LoadData();
+
+  }
+
+  async Task LoadData()
+  {
+    isLoading = true;
+    await Task.Yield();
+    // -------
+    telemetryAll = db1context.Telemetry
+      .Where(t => t.type == 1 && t.period < new DateTime(2022,7,1))
+      .GroupBy(t => new
+      {
+        period = t.period.Date,            
+
+      })
+      .Select(t => new Telemetry
+      {
+        period = t.Key.period,
+        value = t.Sum(v => v.value) / t.Count()
+      })
+      .ToList();
+
+    // ---------
+    telemetry = db1context.Telemetry
+     .Where(t => t.type == 1 && t.period > new DateTime(2022,7,1))
+     .GroupBy(t => new
+     {
+       period = t.period.Date,            
+
+     })
+     .Select(t => new Telemetry
+      {
+        period = t.Key.period,
+        value = t.Sum(v => v.value) / t.Count()
+      })
+     .ToList();
+
+    telemetryPredicted = calcPredicted();
+
+    isLoading = false;
+
+  }
+
+  List<Telemetry> calcPredicted(List<Telemetry> trainingdata)
+  {
+    MLContext mlContext = new MLContext();
+
+    // 1. Import or create training data
+    IDataView trainingData = mlContext.Data.LoadFromEnumerable(trainingdata);
+
+    // 2. Specify data preparation and model training pipeline
+    var pipeline = mlContext.Transforms.Concatenate("Features", new[] { "Size" })
+        .Append(mlContext.Regression.Trainers.LbfgsPoissonRegression());
+
+    // 3. Train model
+    var model = pipeline.Fit(trainingData);
+
+    // 4. Make a prediction
+    var size = new HouseData() { Size = 2.5F };
+    var price = mlContext.Model.CreatePredictionEngine<HouseData, Prediction>(model).Predict(size);
+
+    Console.WriteLine($"Predicted price for size: {size.Size*1000} sq ft= {price.Price*100:C}k");
+
+    // Predicted price for size: 2500 sq ft= $261.98k
+       }
+   }
+  }
+
+  string FormatAsValue(object value)
+  {
+      return ((double)value).ToString("F2", CultureInfo.CreateSpecificCulture("ru-RU"));
+  }
+
+  string FormatAsMonth(object value)
+  {
+      if (value != null)
+      {
+          return Convert.ToDateTime(value).ToString("dd.MM.yyyy");
+      }
+
+      return string.Empty;
+  }
+
+
+  /* 
+   * 
+   */
+}

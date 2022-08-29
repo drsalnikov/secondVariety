@@ -1,0 +1,143 @@
+﻿@page "/requests/new"
+
+@using System.Linq.Dynamic.Core
+@using System.ComponentModel.DataAnnotations
+@using SecondVariety.Models;
+@using SecondVariety.Data;
+
+@inject NavigationManager nav
+@inject db1Context db1context
+
+  <h1>Создать новую заявку</h1>
+  <RadzenTemplateForm TItem="Request" Data="@newRequest" Submit="@OnSubmit" >
+    <div class="row gap-3">
+      <div class="col">
+        <RadzenFieldset Text="Действия" class="gap-3">
+          <RadzenButton ButtonType="ButtonType.Submit" Icon="save" Text="Сохранить" />
+          <RadzenButton ButtonStyle="ButtonStyle.Light" Icon="cancel" style="display: inline-block; margin-left: 10px;" Text="Выйти" Click="@Cancel" />
+        </RadzenFieldset>
+      </div>
+    </div>
+    <div class="row gap-3">
+      <div class="col">
+        <RadzenFieldset>
+          <div class="row">
+            <div class="col">
+                <RadzenLabel Text="Номер заявки:" />
+                <RadzenNumeric Disabled TValue="int" @bind-Value=@lastnumber />
+            </div>
+            <div class="col">
+                <RadzenLabel Text="Дата заявки:" />
+                <RadzenDatePicker TValue="DateTime?" @bind-Value=@newRequest.Data DateFormat="d" Name="Data" />
+                <RadzenRequiredValidator Component="Data" Text="Дата заявки является обязательным полем" />
+            </div>
+            <div class="col">
+                <RadzenLabel Text="Статус" />
+                <RadzenDropDown @bind-Value="newRequest.Status" Data="@(Enum.GetValues(typeof(StatusTypes)))" >
+                </RadzenDropDown>
+            </div>
+          </div>
+          <div class="row">
+            <RadzenDropDownDataGrid 
+              Name="Object"
+              TValue="string" 
+              FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" 
+              AllowFiltering="true" 
+              AllowClear="true"
+              Data=@objects
+              AllowColumnResize="true"
+              Count="@count"
+              Change="@OnChange"
+              TextProperty="Name"
+              ValueProperty="Kod"
+              PageSize="10"
+              AllowFilteringByAllStringColumns="true">
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="Kod" Title="Код" />
+                    <RadzenDropDownDataGridColumn Property="Name" Title="Имя" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+            <RadzenRequiredValidator Component="Object" Text="Выбор объекта при создании заявки является обязательным" />
+          </div>
+          <div class="row">
+            <div class="col">
+              <RadzenLabel Text="Дата начала работ(план):" />
+              <RadzenDatePicker @bind-Value=@newRequest.DateFrom DateFormat="d" Name="DateFrom" />
+              <RadzenRequiredValidator Component="DateFrom" Text="Дата начала работ(план) является обязательным" />
+            </div>
+            <div class="col">
+              <RadzenLabel Text="Дата окончания работ(план):" />
+              <RadzenDatePicker @bind-Value=@newRequest.DateTo DateFormat="d" Name="DateTo" />
+              <RadzenRequiredValidator Component="DateTo" Text="Дата окончания работ(план) является обязательным" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <RadzenLabel Text="Дата начала работ(факт):" />
+              <RadzenDatePicker @bind-Value=@newRequest.DateFromFakt DateFormat="d" Name="DateFromFakt" />
+              <RadzenRequiredValidator Component="DateFromFakt" Text="Дата начала работ(факт) является обязательным" />
+            </div>
+            <div class="col">
+              <RadzenLabel Text="Дата окончания работ(факт):" />
+              <RadzenDatePicker @bind-Value=@newRequest.DateToFakt DateFormat="d" Name="DateToFakt" />
+              <RadzenRequiredValidator Component="DateToFakt" Text="Дата окончания работ(факт) является обязательным" />
+            </div>
+          </div>
+          <div class="row">
+            <RadzenLabel Text="Комментарий:" />
+            <RadzenTextArea @bind-Value=@newRequest.Comment />
+          </div>
+        </RadzenFieldset>
+      </div>
+    </div>
+  </RadzenTemplateForm>
+
+
+<EventConsole @ref=@console Class="mt-4" />
+
+@code {
+  private Request newRequest = new Request();
+  private IEnumerable<SecondVariety.Models.Object> objects = Enumerable.Empty<SecondVariety.Models.Object>();
+  int count;
+  int lastnumber;
+
+  EventConsole console;
+  //StatusTypes logicalFilterOperator = StatusTypes.Closed;
+
+  protected override async Task OnInitializedAsync()
+  {
+    await base.OnInitializedAsync();
+    await LoadData();
+  }
+
+  void OnChange(object args)
+  {
+    if (args is int)
+    {
+      newRequest.KodObject = args as int?;  
+    }
+  }
+
+  void Cancel()
+  {
+      nav.NavigateTo("/requests", true);
+  }
+
+  async Task LoadData()
+  {
+      objects = db1context.Objects.OrderBy(o => o.Kod).AsQueryable();
+      count = objects.Count();
+      var lastnumbers = db1context.Requests.Select(r => r.Num).OrderBy(r => r).ToList();
+      lastnumber = lastnumbers.LastOrDefault() + 1;
+
+      await InvokeAsync(StateHasChanged);
+  }
+
+  void OnSubmit(Request arg)
+  {
+      arg.Num = lastnumber;
+      db1context.Requests.Add(arg);
+      db1context.SaveChanges();
+      nav.NavigateTo($"/objects/{arg.KodObject}", true);
+  }
+}

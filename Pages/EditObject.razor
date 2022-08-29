@@ -1,0 +1,364 @@
+﻿@page "/objects/edit/{Kod:int}"
+
+@using Microsoft.EntityFrameworkCore
+@using SecondVariety.Models;
+@using SecondVariety.Data;
+@using Object = SecondVariety.Models.Object
+@inject db1Context db1context
+@inject NavigationManager nav
+
+  <h1>Редактирование Объекта</h1>
+  <RadzenTemplateForm TItem="Object" Data="@myObj" Submit="@OnSubmit">
+    <div class="row gap-3">
+      <div class="col">
+        <RadzenFieldset Text="Действия" class="gap-3">
+          <RadzenButton ButtonType="ButtonType.Submit" Icon="save" Text="Сохранить" />
+          <RadzenButton ButtonStyle="ButtonStyle.Light" Icon="cancel" style="display: inline-block; margin-left: 10px;" Text="Выйти" Click="@Cancel" />
+        </RadzenFieldset>
+      </div>
+    </div>
+      <div class="row gap-3">
+        <div class="col">
+          <RadzenFieldset Text="Информация об объекте">
+            <div class="row">
+              <div class="col align-items-center">
+                <RadzenLabel Text="Наименование:" />
+                <RadzenTextBox @bind-Value=@myObj.Name />
+              </div>
+              <div class="col align-items-center">
+                <RadzenLabel Text="Код:" />
+                <RadzenNumeric TValue="int" @bind-Value=@myObj.Kod />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col align-items-center">
+                <RadzenLabel Text="Дата последнего ТО:" />
+                <RadzenDatePicker @bind-Value=@myObj.LastTo DateFormat="d" />
+              </div>
+              <div class="col align-items-center">
+                <RadzenLabel Text="Дата следующего ТО:" />
+                <RadzenDatePicker @bind-Value=@myObj.LastTo DateFormat="d" />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col align-items-center">
+                <RadzenLabel Text="Межремонтный интервал (дни):" />
+                <RadzenNumeric TValue="int?" @bind-Value=@myObj.ToTime />
+              </div>
+              <div class="col align-items-center">
+                <RadzenLabel Text="Межремонтный интервал (моточасы):" />
+                <RadzenNumeric TValue="float?" @bind-Value=@myObj.ToNar />
+              </div>
+            </div>
+          </RadzenFieldset>
+        </div>
+      </div>
+      <div class="row gap-3">
+        <div class="col">
+          <RadzenFieldset Text="Наработка">
+            <div class="row">
+              <div class="col align-items-center">
+                <RadzenLabel Text="Начальная дата:" />
+                <RadzenDatePicker @bind-Value=@myObj.DateFrom />
+              </div>
+              <div class="col align-items-center">
+                <RadzenLabel Text="Начальное значение наработки:" />
+                <RadzenNumeric TValue="float?" @bind-Value=@myObj.NarFrom />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col align-items-center">
+                <RadzenLabel Text="Планируемая наработка в год:" />
+              </div>
+              <div class="col align-items-center">
+                <RadzenNumeric TValue="float?" @bind-Value=@myObj.PlanYear />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col align-items-center">
+                <RadzenLabel Text="Текущая наработка:" />
+                <RadzenNumeric TValue="float?" @bind-Value=@myObj.TekNar />
+              </div>
+              <div class="col align-items-center">
+                <RadzenLabel Text="Среднедневная наработка:" />
+                <RadzenNumeric TValue="float?" @bind-Value=@myObj.SredNar />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col align-items-center">
+                <RadzenLabel Text="Коэфициент изменения веса дня:" />
+                <RadzenNumeric TValue="float?" @bind-Value=@myObj.Koef1 />
+              </div>
+              <div class="col align-items-center">
+                <RadzenLabel Text="Коэфициент веса средней наработки:" />
+                <RadzenNumeric TValue="float?" @bind-Value=@myObj.Koef2 />
+              </div>
+            </div>
+          </RadzenFieldset>
+        </div>
+      </div>
+  </RadzenTemplateForm>
+  <div class="row gap-3">
+    <div class="col">
+      <RadzenFieldset Text="Заявки">
+        <RadzenButton 
+          Icon="add_circle_outline" style="margin-bottom: 10px" 
+          Click="@CreateNewRequest" />
+          <RadzenDataGrid 
+            AllowFiltering="true" 
+            AllowColumnResize="true" 
+            FilterMode="FilterMode.Advanced" 
+            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+            AllowSorting="true" 
+            PageSize="10" 
+            AllowPaging="true" 
+            PagerHorizontalAlign="HorizontalAlign.Left" 
+            SelectionMode="DataGridSelectionMode.Single"
+            ShowPagingSummary="true"
+            Data="@requests" 
+            TItem="Request" 
+            ColumnWidth="480px" 
+            LogicalFilterOperator="LogicalFilterOperator.Or"
+            IsLoading="@isLoading"
+            Count="@countRequests">
+            <Columns>
+                <RadzenDataGridColumn TItem="Request" Property="Num" Title="Номер" Width="75px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="Request" Property="Data" Title="Дата" FormatString="{0:d}" Width="150px" />
+                <RadzenDataGridColumn TItem="Request" Property="DateFrom" Title="Дата начала работ"  FormatString="{0:d}" Width="150px"/>
+                <RadzenDataGridColumn TItem="Request" Property="DateTo" Title="Дата окончания работ"  FormatString="{0:d}" Width="150px"/>
+                <RadzenDataGridColumn TItem="Request" Property="Status" Title="Статус" Width="75px" />
+            </Columns>
+        </RadzenDataGrid>
+      </RadzenFieldset>
+    </div>
+  </div>
+  <div class="row gap-3">
+    <div class="col">
+      <RadzenFieldset Text="Наработка">
+        <RadzenButton Icon="add_circle_outline" style="margin-bottom: 10px" 
+          Click="@InsertRowNarabotka" 
+          Disabled=@(narabotkaToInsert != null) />
+          <RadzenDataGrid 
+            AllowFiltering="true" 
+            AllowColumnResize="true" 
+            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+            AllowSorting="true" 
+            PageSize="10" 
+            AllowPaging="true" 
+            PagerHorizontalAlign="HorizontalAlign.Left" 
+            SelectionMode="DataGridSelectionMode.Single"
+            ShowPagingSummary="true"
+            Data="@narabotki" 
+            TItem="Narabotka" 
+            ColumnWidth="480px" 
+            IsLoading="@isLoading"
+            Count="@countNarabotka"
+            @ref="narabotkiGrid"
+            EditMode="DataGridEditMode.Single"
+            RowUpdate="@OnUpdateRowNarabotka" 
+            RowCreate="@OnCreateRowNarabotka">
+            <Columns>
+              <RadzenDataGridColumn TItem="Narabotka" Property="Data" Title="Дата наработки" Width="200px" FormatString="{0:dd.MM.yyyy}">
+                  <Template Context="narabotka">
+                      @narabotka.Data.ToString("dd.MM.yyyy")
+                  </Template>
+                  <EditTemplate Context="narabotka">
+                      <RadzenDatePicker @bind-Value="narabotka.Data" DateFormat="d" Style="width:100%" />
+                  </EditTemplate>
+              </RadzenDataGridColumn>
+              <RadzenDataGridColumn TItem="Narabotka" Property="Val" Title="Значение наработки" Width="150px">
+                  <Template Context="narabotka">
+                      @narabotka.Val
+                  </Template>
+                  <EditTemplate Context="narabotka">
+                      <RadzenNumeric TValue="float?" @bind-Value="narabotka.Val" Style="width:100%" />
+                  </EditTemplate>
+              </RadzenDataGridColumn>
+              <RadzenDataGridColumn TItem="Narabotka" Context="sampleBlazorModelsSampleNarabotka" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="120px">
+                  <Template Context="narabotka">
+                      <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Class="m-1" Click="@(args => EditRowNarabotka(narabotka))" @onclick:stopPropagation="true">
+                      </RadzenButton>
+                  </Template>
+                  <EditTemplate Context="narabotka">
+                      <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Primary" Class="m-1" Click="@((args) => SaveRowNarabotka(narabotka))">
+                      </RadzenButton>
+                      <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Class="m-1" Click="@((args) => CancelEditNarabotka(narabotka))">
+                      </RadzenButton>
+                  </EditTemplate>
+              </RadzenDataGridColumn>
+              <RadzenDataGridColumn TItem="Narabotka" Context="narabotka" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="60px">
+                  <Template Context="narabotka">
+                      <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small" Class="m-1" Click="@(args => DeleteRowNarabotka(narabotka))"  @onclick:stopPropagation="true">
+                      </RadzenButton>
+                  </Template>
+                  <EditTemplate Context="narabotka">
+                      <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small" Class="m-1" Click="@(args => DeleteRowNarabotka(narabotka))">
+                      </RadzenButton>
+                  </EditTemplate>
+              </RadzenDataGridColumn>
+              <RadzenDataGridColumn TItem="Narabotka" Property="KodObject" Title="Код объекта" Visible="false" />
+            </Columns>
+          </RadzenDataGrid>
+      </RadzenFieldset>
+    </div>
+  </div>
+
+  <EventConsole @ref=@console Class="mt-4" />
+
+@code {
+  [Parameter]
+  public int Kod { get; set; }
+  RadzenDataGrid<Narabotka> narabotkiGrid;
+  Narabotka narabotkaToInsert;
+
+  EventConsole console;
+
+  private IEnumerable<Request> requests = Enumerable.Empty<Request>();
+  private IList<Narabotka> narabotki = new List<Narabotka>();
+  private IQueryable<Narabotka> narabotkiQuery;
+  private Object myObj;
+  private bool isLoading;
+  private int countRequests;
+  private int countNarabotka;
+
+
+  protected override async Task OnInitializedAsync()
+  {
+    myObj = db1context.Objects.FirstOrDefault(o => o.Kod == Kod);
+    await base.OnInitializedAsync();
+    await LoadData();
+  }
+
+  async Task LoadData()
+  {
+    isLoading = true;
+    await Task.Yield();
+
+    if (myObj == null)
+    {
+      myObj = db1context.Objects.FirstOrDefault(o => o.Kod == Kod);
+    }
+
+    requests = db1context.Requests.Where(o => o.KodObject == Kod).AsEnumerable();
+    countRequests = requests.Count();
+    narabotkiQuery = db1context.Narabotkas.Where(o => o.KodObject == Kod).OrderBy(o => o.Data);
+    narabotki = narabotkiQuery.ToList();
+    countNarabotka = narabotki.Count();
+    isLoading = false;
+
+  }
+
+  async Task EditRowNarabotka(Narabotka narabotka)
+  {
+    await narabotkiGrid.EditRow(narabotka);
+  }
+
+  void OnUpdateRowNarabotka(Narabotka narabotka)
+  {
+    if (narabotka == narabotkaToInsert)
+    {
+      narabotkaToInsert = null;
+    }
+
+    db1context.Narabotkas.Update(narabotka);
+    db1context.SaveChanges();
+    //narabotkiGrid.Reload();
+  }
+
+  async Task SaveRowNarabotka(Narabotka narabotka)
+  {
+    if (narabotka == narabotkaToInsert)
+    {
+      narabotkaToInsert = null;
+    }
+    if (!narabotka.KodObject.HasValue)
+    {
+      narabotka.KodObject = myObj.Kod;
+    }
+    await narabotkiGrid.UpdateRow(narabotka);
+    //await narabotkiGrid.Reload();
+  }
+
+  void CancelEditNarabotka(Narabotka narabotka)
+  {
+    if (narabotka == narabotkaToInsert)
+    {
+      narabotkaToInsert = null;
+    }
+
+    narabotkiGrid.CancelEditRow(narabotka);
+
+    var narabotkaEntry = db1context.Entry(narabotka);
+    if (narabotkaEntry.State == EntityState.Modified)
+    {
+      narabotkaEntry.CurrentValues.SetValues(narabotkaEntry.OriginalValues);
+      narabotkaEntry.State = EntityState.Unchanged;
+    }
+  }
+
+  async Task DeleteRowNarabotka(Narabotka narabotka)
+  {
+    if (narabotka == narabotkaToInsert)
+    {
+      narabotkaToInsert = null;
+    }
+
+    if (narabotki.Contains(narabotka))
+    {
+      db1context.Narabotkas.Remove(narabotka);
+      db1context.SaveChanges();
+      narabotki.Remove(narabotka);
+
+      await narabotkiGrid.Reload();
+    }
+    else
+    {
+      narabotkiGrid.CancelEditRow(narabotka);
+    }
+  }
+
+  void CreateNewRequest()
+  {
+    nav.NavigateTo("/requests/new", true);
+  }
+
+  async Task InsertRowNarabotka()
+  {
+    narabotkaToInsert = new Narabotka();
+    narabotkaToInsert.KodObject = myObj.Kod;
+    narabotkaToInsert.Data = DateTime.Now;
+    //await narabotkiGrid.InsertRow(narabotkaToInsert);
+    
+    if (narabotki.Count == 0)
+    {
+      narabotki.Add(narabotkaToInsert);
+      ++countNarabotka;
+      await narabotkiGrid.EditRow(narabotkaToInsert);
+    }
+    else
+    {
+      await narabotkiGrid.InsertRow(narabotkaToInsert);
+    }
+    
+    // - await narabotkiGrid.Reload();
+  }
+
+  void OnCreateRowNarabotka(Narabotka narabotka)
+  {
+      db1context.Narabotkas.Add(narabotka);
+      db1context.SaveChanges();
+      //narabotkiGrid.Reload();
+  }
+
+  void OnSubmit(Object arg)
+  {
+      db1context.Objects.Update(arg);
+      db1context.SaveChanges();
+      nav.NavigateTo($"/objects/edit/{arg.Kod}", true);
+  }
+
+  void Cancel()
+  {
+      nav.NavigateTo("/objects", true);
+  }
+}

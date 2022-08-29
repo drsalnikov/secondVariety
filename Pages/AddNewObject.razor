@@ -1,0 +1,152 @@
+﻿@page "/objects/new"
+
+@using Microsoft.EntityFrameworkCore
+@using SecondVariety.Models;
+@using SecondVariety.Data;
+
+@inject db1Context db1context
+@inject NavigationManager nav
+
+  <h1>Создать новый объект</h1>
+  <RadzenTemplateForm TItem="SecondVariety.Models.Object" Data="@myObj" Submit="@OnSubmit">
+    <div class="row gap-3">
+      <div class="col">
+        <RadzenFieldset Text="Действия" class="gap-3">
+          <RadzenButton ButtonType="ButtonType.Submit" Icon="save" Text="Сохранить" />
+          <RadzenButton ButtonStyle="ButtonStyle.Light" Icon="cancel" style="display: inline-block; margin-left: 10px;" Text="Выйти" Click="@Cancel" />
+        </RadzenFieldset>
+      </div>
+    </div>
+    <div class="row gap-3">
+      <div class="col">
+        <RadzenFieldset Text="Информация об объекте">
+          <div class="row">
+            <div class="col align-items-center">
+              <RadzenLabel Text="Наименование:" />
+              <RadzenTextBox @bind-Value=@myObj.Name />
+            </div>
+            <div class="col align-items-center">
+              <RadzenLabel Text="Код:" />
+              <RadzenNumeric Disabled TValue="int" @bind-Value=@myObj.Kod />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col align-items-center">
+              <RadzenLabel Text="Дата последнего ТО:" />
+              <RadzenDatePicker @bind-Value=@myObj.LastTo DateFormat="d" />
+            </div>
+            <div class="col align-items-center">
+              <RadzenLabel Text="Дата следующего ТО:" />
+              <RadzenDatePicker @bind-Value=@myObj.LastTo DateFormat="d" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col align-items-center">
+              <RadzenLabel Text="Межремонтный интервал (дни):" />
+              <RadzenNumeric TValue="int?" @bind-Value=@myObj.ToTime />
+            </div>
+            <div class="col align-items-center">
+              <RadzenLabel Text="Межремонтный интервал (моточасы):" />
+              <RadzenNumeric TValue="float?" @bind-Value=@myObj.ToNar />
+            </div>
+          </div>
+        </RadzenFieldset>
+      </div>
+    </div>
+    <div class="row gap-3">
+      <div class="col">
+        <RadzenFieldset Text="Наработка">
+          <div class="row">
+            <div class="col align-items-center">
+              <RadzenLabel Text="Начальная дата:" />
+              <RadzenDatePicker @bind-Value=@myObj.DateFrom />
+            </div>
+            <div class="col align-items-center">
+              <RadzenLabel Text="Начальное значение наработки:" />
+              <RadzenNumeric TValue="float?" @bind-Value=@myObj.NarFrom />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col align-items-center">
+              <RadzenLabel Text="Планируемая наработка в год:" />
+            </div>
+            <div class="col align-items-center">
+              <RadzenNumeric TValue="float?" @bind-Value=@myObj.PlanYear />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col align-items-center">
+              <RadzenLabel Text="Текущая наработка:" />
+              <RadzenNumeric TValue="float?" @bind-Value=@myObj.TekNar />
+            </div>
+            <div class="col align-items-center">
+              <RadzenLabel Text="Среднедневная наработка:" />
+              <RadzenNumeric TValue="float?" @bind-Value=@myObj.SredNar />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col align-items-center">
+              <RadzenLabel Text="Коэфициент изменения веса дня:" />
+              <RadzenNumeric TValue="float?" @bind-Value=@myObj.Koef1 />
+            </div>
+            <div class="col align-items-center">
+              <RadzenLabel Text="Коэфициент веса средней наработки:" />
+              <RadzenNumeric TValue="float?" @bind-Value=@myObj.Koef2 />
+            </div>
+          </div>
+        </RadzenFieldset>
+      </div>
+    </div>
+  </RadzenTemplateForm>
+
+<EventConsole @ref=@console Class="mt-4" />
+
+@code {
+  //RadzenDataGrid<Narabotka> narabotkiGrid;
+  //int lastKod;
+
+  EventConsole console;
+
+  //private IEnumerable<Request> requests = Enumerable.Empty<Request>();
+  //private IList<Narabotka> narabotki = new List<Narabotka>();
+  //private IQueryable<Narabotka> narabotkiQuery;
+  private SecondVariety.Models.Object myObj;
+  //private bool isLoading;
+  //private int countRequests;
+  //private int countNarabotka;
+
+
+  protected override async Task OnInitializedAsync()
+  {
+    myObj = new SecondVariety.Models.Object();
+    IEnumerable<int> lastkods = db1context.Objects.Select(r => r.Kod).OrderBy(r => r).AsEnumerable();
+    myObj.Kod = lastkods.Any() ? lastkods.LastOrDefault() + 1 : 1;
+
+    await base.OnInitializedAsync();
+    //await LoadData();
+  }
+
+  async Task LoadData()
+  {
+    //isLoading = true;
+    await Task.Yield();
+    //requests = db1context.Requests.Where(o => o.KodObject == Kod).AsEnumerable();
+    //countRequests = requests.Count();
+    //narabotkiQuery = db1context.Narabotkas.Where(o => o.KodObject == Kod).OrderBy(o => o.Data);
+    //narabotki = narabotkiQuery.ToList();
+    //countNarabotka = narabotki.Count();
+    //isLoading = false;
+  }
+
+  void OnSubmit(SecondVariety.Models.Object arg)
+  {
+      db1context.Objects.Add(arg);
+      db1context.SaveChanges();
+      nav.NavigateTo($"/objects/edit/{arg.Kod.ToString()}", true);
+  }
+
+  void Cancel()
+  {
+      nav.NavigateTo("/objects", true);
+  }
+}

@@ -1,7 +1,15 @@
 ﻿
 <RadzenPanelMenu>
-    <RadzenPanelMenuItem class="text-decoration-none" Text="Объекты" Path="Objects" Icon="build"></RadzenPanelMenuItem>
-    <RadzenPanelMenuItem class="text-decoration-none" Text="Заявки" Path="Requests" Icon="account_circle"></RadzenPanelMenuItem>
+    <RadzenPanelMenuItem Text="Ремонты" Icon="build">
+      <RadzenPanelMenuItem class="text-decoration-none" Text="Объекты" Path="objects" Icon="build"></RadzenPanelMenuItem>
+      <RadzenPanelMenuItem class="text-decoration-none" Text="Заявки" Path="requests" Icon="account_circle"></RadzenPanelMenuItem>
+    </RadzenPanelMenuItem>
+    <RadzenPanelMenuItem Text="Аналитика" Icon="assessment">
+      <RadzenPanelMenuItem Text="Анализ 1" Path="analytics1" Icon="account_circle"></RadzenPanelMenuItem>
+      <RadzenPanelMenuItem Text="Анализ 2" Path="analytics2" Icon="account_circle"></RadzenPanelMenuItem>
+      <RadzenPanelMenuItem Text="Анализ 3" Path="analytics3" Icon="account_circle"></RadzenPanelMenuItem>
+      <RadzenPanelMenuItem Text="Анализ 4" Path="analytics4" Icon="account_circle"></RadzenPanelMenuItem>
+    </RadzenPanelMenuItem>
 </RadzenPanelMenu>
 
 @code {

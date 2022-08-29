@@ -1,54 +1,62 @@
 ﻿@page "/objects"
 
-@using Microsoft.EntityFrameworkCore
+@using System.Linq.Dynamic.Core
 @using SecondVariety.Models;
 @using SecondVariety.Data;
 
 @inject NavigationManager nav
-@inject db1Context db1Context
+@inject db1Context db1context
+@inject ContextMenuService ContextMenuService
 
-<h1>Объекты</h1>
-
-<p>Описание.</p>
-
-    <RadzenDataGrid 
-        AllowFiltering="true" 
-        AllowColumnResize="true" 
-        FilterMode="FilterMode.Advanced" 
-        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-        AllowSorting="true" 
-        PageSize="5" 
-        AllowPaging="true" 
-        PagerHorizontalAlign="HorizontalAlign.Left" 
-        SelectionMode="DataGridSelectionMode.Single"
-        ShowPagingSummary="true"
-        Data="@objects" 
-        TItem="SecondVariety.Models.Object" 
-        ColumnWidth="480px" 
-        LogicalFilterOperator="LogicalFilterOperator.Or"
+  <h1>Объекты</h1>
+  <div class="row gap-3">
+    <div class="col">
+      <RadzenFieldset Text="Действия" class="gap-3">
+        <RadzenButton Click=@OnAddNewClick Text="Создать" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
+      </RadzenFieldset>
+    </div>
+  </div>
+  <div class="row gap-3">    
+    <RadzenDataGrid
         IsLoading="@isLoading"
         Count="@count"
-        LoadData="@LoadData"
-        >
+        Data="@objects"
+        AllowSorting="true"
+        AllowPaging="true"
+        AllowColumnPicking="true"
+        ShowPagingSummary="true"
+        PageSize="10"
+        PagerHorizontalAlign="HorizontalAlign.Center"
+        TItem="SecondVariety.Models.Object"
+        SelectionMode="DataGridSelectionMode.Single" 
+        @bind-Value=@selected
+        CellContextMenu="@OnCellContextMenu"
+    >
         <Columns>
-            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="Kod" Title="Код" Width="70px" TextAlign="TextAlign.Center" />
-            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="Name" Title="Наименование" Width="140px" />
-            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="LastTo" Title="Дата последнего ТО"  FormatString="{0:d}" Width="140px"/>
-            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="NextTo" Title="Дата следующего ТО"  FormatString="{0:d}" Width="140px"/>
-            <RadzenDataGridColumn Width="150px" TItem="SecondVariety.Models.Object" Property="ObjectKod" Title="Информация об объекте">
-              <Template Context="data">
-                  <RadzenButton ButtonStyle="ButtonStyle.Info" Icon="info" Class="m-1" Click=@(args => OpenObject(data.Kod)) />
-              </Template>
-            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="Kod" Title="Код" Width="50px" TextAlign="TextAlign.Center" />
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="Name" Title="Наименование" Width="120px" />
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="LastTo" Title="Дата последнего ТО"  FormatString="{0:d}" Width="120px"/>
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="NextTo" Title="Дата следующего ТО"  FormatString="{0:d}" Width="120px"/>
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="DateFrom" Title="Начальная дата"  FormatString="{0:d}" Width="120px"/>
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="NarFrom" Title="Начальное значение наработки" Width="120px" />
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="PlanYear" Title="Планируемая наработка в год" Width="120px" />
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="TekNar" Title="Текущая наработка" Width="120px" />
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="SredNar" Title="Среднедневная наработка" Width="120px" />
         </Columns>
     </RadzenDataGrid>
-
+  </div>
+  <div class="row gap-3">
+    <RadzenCard class="console-message">
+      <span class="console-message-text">*Для редактирования таблицы, используйте правую кнопку мыши.</span>
+    </RadzenCard>
+  </div>
 @code {
-  private IEnumerable<SecondVariety.Models.Object> objects = Enumerable.Empty<SecondVariety.Models.Object>();
-  private bool isLoading;
+  //RadzenDataGrid<SecondVariety.Models.Object> grid;
+  private IQueryable<SecondVariety.Models.Object> objects;
+  IList<SecondVariety.Models.Object> selected;
+  private bool isLoading = false;
   private int count;
-  // RadzenDataGrid<MyObject> grid;
-  //public ObjectListView(IEnumerable<Models.Object> objects) => this.objects = objects;
+  //EventConsole console;
 
   protected override async Task OnInitializedAsync()
   {
@@ -60,17 +68,50 @@
   {
     isLoading = true;
     await Task.Yield();
-
-    objects = db1Context.Objects.AsEnumerable();
+    objects = db1context.Objects.OrderBy(o => o.Kod).AsQueryable();
     count = objects.Count();
     isLoading = false;
   }
 
-  void OpenObject(int? kod)
+  void OnAddNewClick()
   {
-    if (kod.HasValue)
+    nav.NavigateTo("/objects/new", true);
+  }
+
+  void OnCellContextMenu(DataGridCellMouseEventArgs<SecondVariety.Models.Object> args)
+  {
+    selected = new List<SecondVariety.Models.Object>() { args.Data };
+
+    ContextMenuService.Open(args,
+        new List<ContextMenuItem> {
+              new ContextMenuItem(){ Text = "Редактировать", Value = 1 },
+              new ContextMenuItem(){ Text = "Удалить", Value = 2 },
+          }, 
+          (e) => { 
+            switch (e.Value)
+            {
+              case 1:
+                nav.NavigateTo($"/objects/edit/{args.Data.Kod}", true);
+                break;
+              case 2:
+                DeleteObject(args.Data.Kod);
+                break;
+            }
+
+            //console.Log($"e: {e.Value}. args: {args.Data.Num}."); 
+          }
+        );
+  }
+
+  void DeleteObject(int kod)
+  {
+    SecondVariety.Models.Object? myObj = db1context.Objects.FirstOrDefault(r => r.Kod == kod);
+    if (myObj != null)
     {
-      nav.NavigateTo(String.Format("Objects/{0}", kod.ToString()), true);  
+      db1context.Objects.Remove(myObj);
+      db1context.SaveChanges();
     }
+
+    nav.NavigateTo("/objects", true);
   }
 }

@@ -1,12 +1,12 @@
-﻿@page "/requests/edit/{Num:int}"
+﻿@page "/requests/edit/{Id:long}"
 
 @using System.Linq.Dynamic.Core
 @using SecondVariety.Models;
-@using SecondVariety.Data;
 @using Microsoft.EntityFrameworkCore
 
 @inject NavigationManager nav
-@inject db1Context db1context
+@inject GrpcClientService grpcClient 
+
 
   <h1>Редактировать заявку</h1>
   <RadzenTemplateForm TItem="Request" Data="@newRequest" Submit="@OnSubmit" >
@@ -33,10 +33,11 @@
                 <RadzenLabel Text="Статус" />
             </div>
             <div class="col">
-              <RadzenDropDown Context="status" @bind-Value="newRequest.Status" Data="@(Enum.GetValues(typeof(StatusTypes)))" >
-                <Template>
+              <RadzenDropDown Change="@OnStatusChange" Context="status" @bind-Value="ReqStatus" Data="@(Enum.GetValues(typeof(StatusTypes)))" > 
+           <!--   <RadzenDropDown Context="status" @bind-Value="(newRequest.Status??0)" Data="@(Enum.GetValues(typeof(StatusTypes)))" >   -->
+            <!--    <Template>
                     @Enum.GetName(status)
-                </Template>
+                </Template>  -->
               </RadzenDropDown>
             </div>
           </div>
@@ -53,7 +54,7 @@
               Count="@count"
               Change="@OnChange"
               TextProperty="Name"
-              ValueProperty="Kod"
+              ValueProperty="Id"
               PageSize="10"
               AllowFilteringByAllStringColumns="true">
                 <Columns>
@@ -100,9 +101,13 @@
 
 @code {
   [Parameter]
-  public int Num { get; set; }
+  public long Id { get; set; }
+   [CascadingParameter]
+  private Task<AuthenticationState> authenticationStateTask { get; set; }
+  private System.Security.Claims.ClaimsPrincipal? User ;
   private string? objectValue;
   private Request newRequest = new Request();
+  private Models.StatusTypes ReqStatus =  Models.StatusTypes.Agreed;
   private IEnumerable<SecondVariety.Models.Object> objects = Enumerable.Empty<SecondVariety.Models.Object>();
   int count;
   //int lastnumber;
@@ -111,7 +116,7 @@
 
   protected override async Task OnInitializedAsync()
   {
-    newRequest = db1context.Requests.FirstOrDefault(o => o.Num == Num);
+ /*   newRequest = db1context.Requests.FirstOrDefault(o => o.Num == Num);
     if(newRequest != null)
     {
       objectValue = db1context.Objects
@@ -119,10 +124,31 @@
         .Select(o => o.Name)
         .FirstOrDefault();
     }
-    
+    */
+    User = (await authenticationStateTask).User;
+    var req = grpcClient.GetRequestById(Id) ;
+
+    if(req!=null)
+    {
+      newRequest = req ;
+      if(req.KodObject!=null)
+        objectValue = grpcClient.GetObjectById(req.KodObject??0).Name ;   
+
+      ReqStatus = (Models.StatusTypes)(newRequest.Status??0) ;      
+    }
+
     await base.OnInitializedAsync();
     await LoadData();
   }
+
+  void OnStatusChange(object args)
+  {
+    if (args is Models.StatusTypes)
+    {
+      newRequest.Status = (int)args;
+    }
+  }
+
 
   void OnChange(object args)
   {
@@ -140,16 +166,24 @@
 
   async Task LoadData()
   {
-      objects = objects = db1context.Objects.OrderBy(o => o.Kod).AsQueryable();
-      count = objects.Count();
-
+     // objects = objects = db1context.Objects.OrderBy(o => o.Kod).AsQueryable();
+     // count = objects.Count();
+      objects = grpcClient.GetObjects().OrderBy(o=>o.Kod) ; 
       await InvokeAsync(StateHasChanged);
   }
 
   void OnSubmit(Request arg)
   {
-      db1context.Requests.Update(arg);
-      db1context.SaveChanges();
-      nav.NavigateTo($"/objects/edit/{arg.KodObject}", true);
+     // db1context.Requests.Update(arg);
+     // db1context.SaveChanges();
+      grpcClient.UpdateRequest(arg) ;
+      if(User.IsInRole("Administrator"))
+      {
+        nav.NavigateTo($"/objects/edit/{arg.KodObject}", true);
+      }
+      else
+      {
+        nav.NavigateTo($"/requests", true);
+      }
   }
 }

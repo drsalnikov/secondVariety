@@ -3,10 +3,10 @@
 @using System.Linq.Dynamic.Core
 @using System.ComponentModel.DataAnnotations
 @using SecondVariety.Models;
-@using SecondVariety.Data;
 
-@inject NavigationManager nav
-@inject db1Context db1context
+
+@inject NavigationManager nav;
+@inject GrpcClientService grpcClient ;
 
   <h1>Создать новую заявку</h1>
   <RadzenTemplateForm TItem="Request" Data="@newRequest" Submit="@OnSubmit" >
@@ -33,7 +33,10 @@
             </div>
             <div class="col">
                 <RadzenLabel Text="Статус" />
+                <!--
                 <RadzenDropDown @bind-Value="newRequest.Status" Data="@(Enum.GetValues(typeof(StatusTypes)))" >
+                  -->
+                <RadzenDropDown TValue="int" Change="@OnStatusChange" Data="@(Enum.GetValues(typeof(StatusTypes)))" >
                 </RadzenDropDown>
             </div>
           </div>
@@ -49,7 +52,7 @@
               Count="@count"
               Change="@OnChange"
               TextProperty="Name"
-              ValueProperty="Kod"
+              ValueProperty="Id"
               PageSize="10"
               AllowFilteringByAllStringColumns="true">
                 <Columns>
@@ -117,7 +120,13 @@
       newRequest.KodObject = args as int?;  
     }
   }
-
+  void OnStatusChange(object args)
+  {
+    if (args is Models.StatusTypes)
+    {
+      newRequest.Status = (int)args;  
+    }
+  }
   void Cancel()
   {
       nav.NavigateTo("/requests", true);
@@ -125,19 +134,30 @@
 
   async Task LoadData()
   {
-      objects = db1context.Objects.OrderBy(o => o.Kod).AsQueryable();
+     /* objects = db1context.Objects.OrderBy(o => o.Kod).AsQueryable();
       count = objects.Count();
-      var lastnumbers = db1context.Requests.Select(r => r.Num).OrderBy(r => r).ToList();
-      lastnumber = lastnumbers.LastOrDefault() + 1;
+      var lastnumbers = db1context.Requests.Select(r => r.Num).OrderBy(r => r).ToList();*/
+      //lastnumber = lastnumbers.LastOrDefault() + 1;
 
-      await InvokeAsync(StateHasChanged);
+     var objs = grpcClient.GetObjects() ;
+     objects = objs.OrderBy(o => o.Kod) ;
+     count = objects.Count();
+     
+     var reqs = grpcClient.GetRequests() ;
+     var lastnumbers = reqs.Select(r => r.Num).OrderBy(r => r).ToList();
+     lastnumber = lastnumbers.LastOrDefault() + 1;
+
+     await InvokeAsync(StateHasChanged);
   }
 
   void OnSubmit(Request arg)
   {
       arg.Num = lastnumber;
-      db1context.Requests.Add(arg);
+    /*  db1context.Requests.Add(arg);
       db1context.SaveChanges();
-      nav.NavigateTo($"/objects/{arg.KodObject}", true);
+      */
+      grpcClient.AddRequest(arg);
+     // nav.NavigateTo($"/objects/{arg.KodObject}", true);
+      nav.NavigateTo($"/objects/edit/{arg.KodObject}", true);
   }
 }

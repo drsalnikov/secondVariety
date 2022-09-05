@@ -2,20 +2,21 @@
 
 @using System.Linq.Dynamic.Core
 @using SecondVariety.Models;
-@using SecondVariety.Data;
-
+@using System.Linq;
 @inject NavigationManager nav
-@inject db1Context db1context
 @inject ContextMenuService ContextMenuService
+@inject GrpcClientService grpcClient 
 
   <h1>Объекты</h1>
-  <div class="row gap-3">
-    <div class="col">
-      <RadzenFieldset Text="Действия" class="gap-3">
-        <RadzenButton Click=@OnAddNewClick Text="Создать" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
-      </RadzenFieldset>
-    </div>
-  </div>
+    <AuthorizeView Roles="Administrator">
+     <div class="row gap-3">
+       <div class="col">
+         <RadzenFieldset Text="Действия" class="gap-3">
+           <RadzenButton Click=@OnAddNewClick Text="Создать" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
+         </RadzenFieldset>
+       </div>
+     </div>
+    </AuthorizeView>
   <div class="row gap-3">    
     <RadzenDataGrid
         IsLoading="@isLoading"
@@ -51,8 +52,11 @@
     </RadzenCard>
   </div>
 @code {
+  [CascadingParameter]
+  private Task<AuthenticationState> authenticationStateTask { get; set; }
+  private System.Security.Claims.ClaimsPrincipal? User ;
   //RadzenDataGrid<SecondVariety.Models.Object> grid;
-  private IQueryable<SecondVariety.Models.Object> objects;
+  private IEnumerable<SecondVariety.Models.Object> objects;
   IList<SecondVariety.Models.Object> selected;
   private bool isLoading = false;
   private int count;
@@ -68,20 +72,28 @@
   {
     isLoading = true;
     await Task.Yield();
-    objects = db1context.Objects.OrderBy(o => o.Kod).AsQueryable();
+    User = (await authenticationStateTask).User;
+   
+     var objs = grpcClient.GetObjects() ;
+    objects = objs.OrderBy(o => o.Kod) ;
+    //.OrderBy(o => o.Kod); //db1context.Objects.OrderBy(o => o.Kod).AsQueryable();
     count = objects.Count();
     isLoading = false;
   }
 
   void OnAddNewClick()
   {
-    nav.NavigateTo("/objects/new", true);
+    if(User.IsInRole("Administrator"))
+    {
+      nav.NavigateTo("/objects/new", true);
+    }
   }
 
   void OnCellContextMenu(DataGridCellMouseEventArgs<SecondVariety.Models.Object> args)
   {
     selected = new List<SecondVariety.Models.Object>() { args.Data };
-
+    if(User.IsInRole("Administrator"))
+    {
     ContextMenuService.Open(args,
         new List<ContextMenuItem> {
               new ContextMenuItem(){ Text = "Редактировать", Value = 1 },
@@ -91,27 +103,30 @@
             switch (e.Value)
             {
               case 1:
-                nav.NavigateTo($"/objects/edit/{args.Data.Kod}", true);
+                nav.NavigateTo($"/objects/edit/{args.Data.Id}", true);
                 break;
               case 2:
-                DeleteObject(args.Data.Kod);
+                DeleteObject(args.Data.Id);
                 break;
             }
 
             //console.Log($"e: {e.Value}. args: {args.Data.Num}."); 
           }
         );
+     }
   }
 
-  void DeleteObject(int kod)
+  void DeleteObject(int Id)
   {
-    SecondVariety.Models.Object? myObj = db1context.Objects.FirstOrDefault(r => r.Kod == kod);
+  /*  SecondVariety.Models.Object? myObj = db1context.Objects.FirstOrDefault(r => r.Kod == kod);
     if (myObj != null)
     {
       db1context.Objects.Remove(myObj);
       db1context.SaveChanges();
     }
-
-    nav.NavigateTo("/objects", true);
+*/  
+    grpcClient.DeleteObject(Id);
+   
+    
   }
 }

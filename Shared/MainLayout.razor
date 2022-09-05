@@ -1,4 +1,6 @@
 ﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+
 
 <PageTitle>SecondVariety</PageTitle>
 
@@ -7,7 +9,7 @@
     <div class="top-row">
         <LoginDisplay />            
     </div>
-
+<AuthorizeView Roles="Administrator, Manager, Worker">
     <div class="sidebar">
         <NavMenu />
     </div>
@@ -23,5 +25,5 @@
         <RadzenContextMenu/>
         <RadzenTooltip/>
     </main>
-
+</AuthorizeView>
 </div>

@@ -1,0 +1,17 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";  
+import "Protos/messages.proto" ;
+
+
+option csharp_namespace = "SecondVariety";
+package secondvariety;
+
+service ObjectsServ {
+  rpc GetAll(Empty) returns(GObjects);
+  rpc GetById(GObjectId) returns(GObject);
+  rpc Post(GObject) returns(GObject);
+  rpc Put(GObject) returns(GObject);
+  rpc Delete(GObjectId) returns(Empty);
+}
+

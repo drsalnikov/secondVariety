@@ -70,7 +70,7 @@ namespace SecondVariety.Areas.Identity.Pages.Account
       //
       [Required]
       [DataType(DataType.Text)]
-      [Display(Name = "User Name")]
+      [Display(Name = "Имя пользователя")]
       public string UserName { get; set; }
 
       /// <summary>
@@ -85,7 +85,7 @@ namespace SecondVariety.Areas.Identity.Pages.Account
       ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
       ///     directly from your code. This API may change or be removed in future releases.
       /// </summary>
-      [Display(Name = "Remember me?")]
+      [Display(Name = "Запомнить меня")]
       public bool RememberMe { get; set; }
     }
 
@@ -119,7 +119,7 @@ namespace SecondVariety.Areas.Identity.Pages.Account
         var result = await _signInManager.PasswordSignInAsync(Input.UserName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         if (result.Succeeded)
         {
-          _logger.LogInformation("User logged in.");
+          _logger.LogInformation("Успешный вход в систему");
           return LocalRedirect(returnUrl);
         }
         if (result.RequiresTwoFactor)
@@ -128,12 +128,12 @@ namespace SecondVariety.Areas.Identity.Pages.Account
         }
         if (result.IsLockedOut)
         {
-          _logger.LogWarning("User account locked out.");
+          _logger.LogWarning("Пользователь заблокирован");
           return RedirectToPage("./Lockout");
         }
         else
         {
-          ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+          ModelState.AddModelError(string.Empty, "Неверное имя пользователя или пароль");
           return Page();
         }
       }

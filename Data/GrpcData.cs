@@ -3,7 +3,7 @@ using Grpc.Net.Client;
 using Microsoft.AspNetCore;
 using Google.Protobuf.WellKnownTypes;
 using SecondVariety.Models;
-
+using Grpc.Core;
 namespace SecondVariety
 {
 
@@ -14,7 +14,7 @@ namespace SecondVariety
     {
       var builder = WebApplication.CreateBuilder();
       clientChannelPath = builder.Configuration["GrpcChannels:SecondVariety"];
-
+      jwtToken = builder.Configuration["JWTBearer:Token"];
     }
 
     public IEnumerable<Models.Object> GetObjects()
@@ -22,7 +22,7 @@ namespace SecondVariety
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
       IEnumerable<Models.Object> objs = new List<Models.Object>();
       var gobclient = new ObjectsServ.ObjectsServClient(channel);
-      var objallreply = gobclient.GetAll(new SecondVariety.Empty());
+      var objallreply = gobclient.GetAll(new SecondVariety.Empty(),GetMetadata());
 
       if (objallreply != null && objallreply.Items.Count > 0)
       {
@@ -36,14 +36,14 @@ namespace SecondVariety
     {
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
       var gobclient = new ObjectsServ.ObjectsServClient(channel);
-      var empt = gobclient.Delete(new GObjectId { Id = Id });
+      var empt = gobclient.Delete(new GObjectId { Id = Id },GetMetadata());
     }
 
     public Models.Object GetObjectById(int Id)
     {
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
       var gobclient = new ObjectsServ.ObjectsServClient(channel);
-      var gobj = gobclient.GetById(new GObjectId { Id = Id });
+      var gobj = gobclient.GetById(new GObjectId { Id = Id },GetMetadata());
       return ObjectFromGObject(gobj);
     }
 
@@ -51,21 +51,21 @@ namespace SecondVariety
     {
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
       var gobclient = new ObjectsServ.ObjectsServClient(channel);
-      var objallreply = await gobclient.PostAsync(GobjectFromObject(obj));
+      var objallreply = await gobclient.PostAsync(GobjectFromObject(obj),GetMetadata());
     }
 
     public void AddObject(Models.Object obj)
     {
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
       var gobclient = new ObjectsServ.ObjectsServClient(channel);
-      var objallreply = gobclient.Post(GobjectFromObject(obj));
+      var objallreply = gobclient.Post(GobjectFromObject(obj),GetMetadata());
     }
 
     public void UpdateObject(Models.Object obj)
     {
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
       var gobclient = new ObjectsServ.ObjectsServClient(channel);
-      var gobj = gobclient.Put(GobjectFromObject(obj));
+      var gobj = gobclient.Put(GobjectFromObject(obj),GetMetadata());
     }
 
     public async Task<IEnumerable<Models.Narabotka>> GetNarabotkasByObjectKod(int Kod)
@@ -73,7 +73,7 @@ namespace SecondVariety
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
       IEnumerable<Models.Narabotka> objs = new List<Models.Narabotka>();
       var gobclient = new NarabotkaServ.NarabotkaServClient(channel);
-      var objallreply = await gobclient.GetByObjectKodAsync(new GObjectId { Id = Kod });
+      var objallreply = await gobclient.GetByObjectKodAsync(new GObjectId { Id = Kod },GetMetadata());
 
       if (objallreply != null && objallreply.Items.Count > 0)
       {
@@ -87,7 +87,7 @@ namespace SecondVariety
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
       IEnumerable<Models.Narabotka> objs = new List<Models.Narabotka>();
       var gobclient = new NarabotkaServ.NarabotkaServClient(channel);
-      var objallreply = gobclient.GetByObjectKod(new GObjectId { Id = Kod });
+      var objallreply = gobclient.GetByObjectKod(new GObjectId { Id = Kod },GetMetadata());
 
       if (objallreply != null && objallreply.Items.Count > 0)
       {
@@ -101,7 +101,7 @@ namespace SecondVariety
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
 
       var gobclient = new NarabotkaServ.NarabotkaServClient(channel);
-      var objallreply = gobclient.Post(GNarabotkaFromNarabotka(narabotka));
+      var objallreply = gobclient.Post(GNarabotkaFromNarabotka(narabotka),GetMetadata());
     }
 
     public void UpdateNarabotka(Models.Narabotka narabotka)
@@ -109,20 +109,20 @@ namespace SecondVariety
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
 
       var gobclient = new NarabotkaServ.NarabotkaServClient(channel);
-      var objallreply = gobclient.Put(GNarabotkaFromNarabotka(narabotka));
+      var objallreply = gobclient.Put(GNarabotkaFromNarabotka(narabotka),GetMetadata());
     }
 
     public void DeleteNarabotka(int Id)
     {
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
       var gobclient = new NarabotkaServ.NarabotkaServClient(channel);
-      var empt = gobclient.Delete(new GObjectId { Id = Id });
+      var empt = gobclient.Delete(new GObjectId { Id = Id },GetMetadata());
     }
     public void AddRequest(Models.Request request)
     {
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
       var gobclient = new RequestServ.RequestServClient(channel);
-      var objallreply = gobclient.Post(GRequestFromRequest(request));
+      var objallreply = gobclient.Post(GRequestFromRequest(request),GetMetadata());
     }
 
     public IEnumerable<Models.Request> GetRequests()
@@ -130,7 +130,7 @@ namespace SecondVariety
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
       IEnumerable<Models.Request> objs = new List<Models.Request>();
       var gobclient = new RequestServ.RequestServClient(channel);
-      var objallreply = gobclient.GetAll(new SecondVariety.Empty());
+      var objallreply = gobclient.GetAll(new SecondVariety.Empty(),GetMetadata());
 
       if (objallreply != null && objallreply.Items.Count > 0)
       {
@@ -145,7 +145,7 @@ namespace SecondVariety
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
       IEnumerable<Models.Request> objs = new List<Models.Request>();
       var gobclient = new RequestServ.RequestServClient(channel);
-      var objallreply = await gobclient.GetByObjectKodAsync(new GObjectId { Id = Kod });
+      var objallreply = await gobclient.GetByObjectKodAsync(new GObjectId { Id = Kod },GetMetadata());
 
       if (objallreply != null && objallreply.Items.Count > 0)
       {
@@ -159,7 +159,7 @@ namespace SecondVariety
     {
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
       var gobclient = new RequestServ.RequestServClient(channel);
-      var req = gobclient.GetByNum(new GObjectId { Id = Num });
+      var req = gobclient.GetByNum(new GObjectId { Id = Num },GetMetadata());
 
       if (req != null && req.HasValue)
       {
@@ -173,7 +173,7 @@ namespace SecondVariety
     {
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
       var gobclient = new RequestServ.RequestServClient(channel);
-      var req = gobclient.GetById(new GRequestId { Id = Id });
+      var req = gobclient.GetById(new GRequestId { Id = Id },GetMetadata());
 
       if (req != null && req.HasValue)
       {
@@ -186,14 +186,14 @@ namespace SecondVariety
     {
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
       var gobclient = new RequestServ.RequestServClient(channel);
-      var empt = gobclient.Delete(new GRequestId { Id = Id });
+      var empt = gobclient.Delete(new GRequestId { Id = Id },GetMetadata());
     }
 
     public void DeleteRequestByNum(int Num)
     {
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
       var gobclient = new RequestServ.RequestServClient(channel);
-      var empt = gobclient.DeleteByNum(new GObjectId { Id = Num });
+      var empt = gobclient.DeleteByNum(new GObjectId { Id = Num },GetMetadata());
     }
 
     public void UpdateRequest(Models.Request request)
@@ -201,7 +201,7 @@ namespace SecondVariety
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
 
       var gobclient = new RequestServ.RequestServClient(channel);
-      var objallreply = gobclient.Put(GRequestFromRequest(request));
+      var objallreply = gobclient.Put(GRequestFromRequest(request),GetMetadata());
     }
 
     private Timestamp FromDateOnly(DateOnly? donly)
@@ -367,6 +367,13 @@ namespace SecondVariety
       return gobj;
     }
 
+    private Metadata? GetMetadata()
+    {
+         var headers = new Metadata();
+         headers.Add("Authorization", $"Bearer {jwtToken}");
+         return headers ;
+    }
+
     private DateTime ToMoscowFromTimeStamp(Timestamp tstmp)
     {
       var dt = DateTime.SpecifyKind(tstmp.ToDateTime().AddHours(3), DateTimeKind.Unspecified);
@@ -391,6 +398,7 @@ namespace SecondVariety
       return TimeSFromDateTime(new DateTime(year, month, day));
     }
     private string clientChannelPath;
+    private string jwtToken ;
   }
 }
 

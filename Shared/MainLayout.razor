@@ -1,29 +1,49 @@
 ﻿@inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager nav
 
-
-<PageTitle>SecondVariety</PageTitle>
+<PageTitle>Второй вариант</PageTitle>
 
 <div class="page">
 
     <div class="top-row">
-        <LoginDisplay />            
-    </div>
-<AuthorizeView Roles="Administrator, Manager, Worker">
-    <div class="sidebar">
-        <NavMenu />
+        <LoginDisplay />
     </div>
 
-    <main>
+    <AuthorizeView Roles="Administrator, Manager, Worker">
+        <Authorized>
+            <div class="sidebar">
+                <NavMenu />
+            </div>
 
-        <article class="content px-4">
-            @Body
-        </article>
+            <main>
 
-        <RadzenDialog/>
-        <RadzenNotification/>
-        <RadzenContextMenu/>
-        <RadzenTooltip/>
-    </main>
-</AuthorizeView>
+                <article class="content px-4">
+                    @Body
+                </article>
+
+                <RadzenDialog />
+                <RadzenNotification />
+                <RadzenContextMenu />
+                <RadzenTooltip />
+            </main>
+        </Authorized>
+        <NotAuthorized>
+      
+        </NotAuthorized>
+    </AuthorizeView>
+
+
 </div>
+
+      @code {
+               [CascadingParameter]
+                private Task<AuthenticationState> authenticationStateTask { get; set; }
+                protected override async Task OnInitializedAsync()
+                {
+                    var autsk = (await authenticationStateTask) ;
+                    var user = autsk.User;
+                    if(!user.Identity.IsAuthenticated)
+                        nav.NavigateTo("/Identity/Account/Login",true) ;
+                }
+            }

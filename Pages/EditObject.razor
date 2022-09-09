@@ -221,6 +221,9 @@
 @code {
   [Parameter]
   public int Id { get; set; }
+  [CascadingParameter]
+  private Task<AuthenticationState> authenticationStateTask { get; set; }
+  private System.Security.Claims.ClaimsPrincipal? User ;
   RadzenDataGrid<Narabotka> narabotkiGrid;
   Narabotka narabotkaToInsert;
 
@@ -238,7 +241,9 @@
   protected override async Task OnInitializedAsync()
   {
    // myObj = db1context.Objects.FirstOrDefault(o => o.Kod == Kod);
-
+    User = (await authenticationStateTask).User;
+     if(!User.IsInRole("Administrator"))
+       return ;
     myObj = grpcClient.GetObjectById(Id);  
 
     await base.OnInitializedAsync();

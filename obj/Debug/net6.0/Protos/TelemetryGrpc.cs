@@ -54,6 +54,14 @@ namespace SecondVariety {
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::SecondVariety.GTelemetry> __Marshaller_secondvariety_GTelemetry = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SecondVariety.GTelemetry.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::SecondVariety.GTelemetryPeriod> __Marshaller_secondvariety_GTelemetryPeriod = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SecondVariety.GTelemetryPeriod.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::SecondVariety.GTelemetryPeriodForObject> __Marshaller_secondvariety_GTelemetryPeriodForObject = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SecondVariety.GTelemetryPeriodForObject.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::SecondVariety.GTelemetryTwoTypes> __Marshaller_secondvariety_GTelemetryTwoTypes = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SecondVariety.GTelemetryTwoTypes.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Google.Protobuf.WellKnownTypes.Empty> __Marshaller_google_protobuf_Empty = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Google.Protobuf.WellKnownTypes.Empty.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::SecondVariety.Empty> __Marshaller_secondvariety_Empty = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::SecondVariety.Empty.Parser));
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
@@ -71,6 +79,54 @@ namespace SecondVariety {
         "GetById",
         __Marshaller_secondvariety_GObjectId,
         __Marshaller_secondvariety_GTelemetry);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::SecondVariety.GTelemetryPeriod, global::SecondVariety.GTelemetrys> __Method_GetForPeriod = new grpc::Method<global::SecondVariety.GTelemetryPeriod, global::SecondVariety.GTelemetrys>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "GetForPeriod",
+        __Marshaller_secondvariety_GTelemetryPeriod,
+        __Marshaller_secondvariety_GTelemetrys);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::SecondVariety.GTelemetryPeriodForObject, global::SecondVariety.GTelemetrys> __Method_GetForPeriodForObjectByKod = new grpc::Method<global::SecondVariety.GTelemetryPeriodForObject, global::SecondVariety.GTelemetrys>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "GetForPeriodForObjectByKod",
+        __Marshaller_secondvariety_GTelemetryPeriodForObject,
+        __Marshaller_secondvariety_GTelemetrys);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::SecondVariety.GTelemetryPeriodForObject, global::SecondVariety.GTelemetryTwoTypes> __Method_GetForPeriodForObjectWarning4 = new grpc::Method<global::SecondVariety.GTelemetryPeriodForObject, global::SecondVariety.GTelemetryTwoTypes>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "GetForPeriodForObjectWarning4",
+        __Marshaller_secondvariety_GTelemetryPeriodForObject,
+        __Marshaller_secondvariety_GTelemetryTwoTypes);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::Google.Protobuf.WellKnownTypes.Empty, global::SecondVariety.GObjectId> __Method_GetLastTrainedRecId = new grpc::Method<global::Google.Protobuf.WellKnownTypes.Empty, global::SecondVariety.GObjectId>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "GetLastTrainedRecId",
+        __Marshaller_google_protobuf_Empty,
+        __Marshaller_secondvariety_GObjectId);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::SecondVariety.GObjectId, global::SecondVariety.Empty> __Method_TrainingObj = new grpc::Method<global::SecondVariety.GObjectId, global::SecondVariety.Empty>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "TrainingObj",
+        __Marshaller_secondvariety_GObjectId,
+        __Marshaller_secondvariety_Empty);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::SecondVariety.GObjectId, global::SecondVariety.Empty> __Method_CheckingObj = new grpc::Method<global::SecondVariety.GObjectId, global::SecondVariety.Empty>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "CheckingObj",
+        __Marshaller_secondvariety_GObjectId,
+        __Marshaller_secondvariety_Empty);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::SecondVariety.GTelemetry, global::SecondVariety.GTelemetry> __Method_Post = new grpc::Method<global::SecondVariety.GTelemetry, global::SecondVariety.GTelemetry>(
@@ -168,6 +224,126 @@ namespace SecondVariety {
       public virtual grpc::AsyncUnaryCall<global::SecondVariety.GTelemetry> GetByIdAsync(global::SecondVariety.GObjectId request, grpc::CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_GetById, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::SecondVariety.GTelemetrys GetForPeriod(global::SecondVariety.GTelemetryPeriod request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetForPeriod(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::SecondVariety.GTelemetrys GetForPeriod(global::SecondVariety.GTelemetryPeriod request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_GetForPeriod, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::SecondVariety.GTelemetrys> GetForPeriodAsync(global::SecondVariety.GTelemetryPeriod request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetForPeriodAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::SecondVariety.GTelemetrys> GetForPeriodAsync(global::SecondVariety.GTelemetryPeriod request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_GetForPeriod, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::SecondVariety.GTelemetrys GetForPeriodForObjectByKod(global::SecondVariety.GTelemetryPeriodForObject request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetForPeriodForObjectByKod(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::SecondVariety.GTelemetrys GetForPeriodForObjectByKod(global::SecondVariety.GTelemetryPeriodForObject request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_GetForPeriodForObjectByKod, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::SecondVariety.GTelemetrys> GetForPeriodForObjectByKodAsync(global::SecondVariety.GTelemetryPeriodForObject request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetForPeriodForObjectByKodAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::SecondVariety.GTelemetrys> GetForPeriodForObjectByKodAsync(global::SecondVariety.GTelemetryPeriodForObject request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_GetForPeriodForObjectByKod, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::SecondVariety.GTelemetryTwoTypes GetForPeriodForObjectWarning4(global::SecondVariety.GTelemetryPeriodForObject request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetForPeriodForObjectWarning4(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::SecondVariety.GTelemetryTwoTypes GetForPeriodForObjectWarning4(global::SecondVariety.GTelemetryPeriodForObject request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_GetForPeriodForObjectWarning4, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::SecondVariety.GTelemetryTwoTypes> GetForPeriodForObjectWarning4Async(global::SecondVariety.GTelemetryPeriodForObject request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetForPeriodForObjectWarning4Async(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::SecondVariety.GTelemetryTwoTypes> GetForPeriodForObjectWarning4Async(global::SecondVariety.GTelemetryPeriodForObject request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_GetForPeriodForObjectWarning4, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::SecondVariety.GObjectId GetLastTrainedRecId(global::Google.Protobuf.WellKnownTypes.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetLastTrainedRecId(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::SecondVariety.GObjectId GetLastTrainedRecId(global::Google.Protobuf.WellKnownTypes.Empty request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_GetLastTrainedRecId, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::SecondVariety.GObjectId> GetLastTrainedRecIdAsync(global::Google.Protobuf.WellKnownTypes.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetLastTrainedRecIdAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::SecondVariety.GObjectId> GetLastTrainedRecIdAsync(global::Google.Protobuf.WellKnownTypes.Empty request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_GetLastTrainedRecId, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::SecondVariety.Empty TrainingObj(global::SecondVariety.GObjectId request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return TrainingObj(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::SecondVariety.Empty TrainingObj(global::SecondVariety.GObjectId request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_TrainingObj, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::SecondVariety.Empty> TrainingObjAsync(global::SecondVariety.GObjectId request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return TrainingObjAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::SecondVariety.Empty> TrainingObjAsync(global::SecondVariety.GObjectId request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_TrainingObj, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::SecondVariety.Empty CheckingObj(global::SecondVariety.GObjectId request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return CheckingObj(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::SecondVariety.Empty CheckingObj(global::SecondVariety.GObjectId request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_CheckingObj, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::SecondVariety.Empty> CheckingObjAsync(global::SecondVariety.GObjectId request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return CheckingObjAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::SecondVariety.Empty> CheckingObjAsync(global::SecondVariety.GObjectId request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_CheckingObj, null, options, request);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::SecondVariety.GTelemetry Post(global::SecondVariety.GTelemetry request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))

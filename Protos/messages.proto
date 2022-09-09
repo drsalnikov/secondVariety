@@ -102,6 +102,29 @@ message GTelemetryPeriod
      bool HasValue = 3;
 }
 
+message GTelemetryPeriodForObject
+{
+    GObjectId KodObject  = 1;
+    GTelemetryPeriod GTelemetryPeriod  = 2;
+    bool HasValue = 3;
+}
+
+message GTelemetryTwoTypes
+{
+    GTelemetrys Type1  = 1;
+    GTelemetrys Type2  = 2;
+}
+
+message GClaim
+{
+    string Uri = 1;
+}
+
+message GGetTokenClaims
+{
+    repeated GClaim Claims = 1;
+}
+
 message GTrainingResult
 {
     int32 Id =1 ; 

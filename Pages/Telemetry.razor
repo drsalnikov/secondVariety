@@ -1,0 +1,141 @@
+@page "/telemetry/{Id:long}/{DateTStr}/{DateTEtr}/{War4:int}/{ObjKod:int}"
+
+@using System.Linq.Dynamic.Core
+@using SecondVariety.Models;
+@using Microsoft.EntityFrameworkCore
+
+@inject NavigationManager nav
+@inject GrpcClientService grpcClient
+
+
+<h1>@HeaderStr</h1>
+<div class="row gap-3">
+
+    <RadzenChart>
+          <RadzenLegend Position="LegendPosition.Top" />
+        <RadzenLineSeries Smooth="true" Data="@Telemetries" CategoryProperty="Period" Title="@TeleMetr1Title"
+            ValueProperty="Value" RenderingOrder="1">
+            <RadzenSeriesTrendLine Visible="true" Stroke="red" LineType="LineType.Solid" />
+        </RadzenLineSeries>
+        <RadzenCategoryAxis Padding="20" Formatter="@FormatAsTime" />
+        <RadzenValueAxis Formatter="@FormatAsVal">
+            <RadzenGridLines Visible="true" />
+            <RadzenAxisTitle Text="Значение" />
+        </RadzenValueAxis>
+    </RadzenChart>
+</div>
+
+<div class="row gap-4">
+    <RadzenChart Visible="@War4Visible">        
+        <RadzenLegend Position="LegendPosition.Top" />
+        <RadzenLineSeries Smooth="true" Data="@Telemetries1" CategoryProperty="Period" Title="@TeleMetr2Title"
+            ValueProperty="Value" RenderingOrder="1">
+            <RadzenSeriesTrendLine Visible="true" Stroke="red" LineType="LineType.Solid" />
+        </RadzenLineSeries>
+        <RadzenCategoryAxis Padding="20" Formatter="@FormatAsTime" />
+        <RadzenValueAxis Formatter="@FormatAsVal">
+            <RadzenGridLines Visible="true" />
+            <RadzenAxisTitle Text="Значение" />
+        </RadzenValueAxis>
+    </RadzenChart>
+</div>
+
+@code {
+    [Parameter] public long Id { get; set; }
+    [Parameter] public string DateTStr { get; set; }
+    [Parameter] public string DateTEtr { get; set; }
+    [Parameter] public int War4 { get; set; }
+    [Parameter] public int ObjKod { get; set; }
+    public DateTime DateT { get; set; }
+    public string HeaderStr {get;set;}
+    public string TeleMetr1Title {get;set ;}
+
+    public bool War4Visible {get;set;} = false ;
+
+    public string TeleMetr2Title {get;set ;}
+    List<Models.Telemetry> Telemetries  {get;set;} = new List<Models.Telemetry>() ;
+    List<Models.Telemetry> Telemetries1 {get;set;} = new List<Models.Telemetry>() ;   
+    protected override async Task OnInitializedAsync()
+    {
+        Telemetries = new List<Models.Telemetry>();
+        Telemetries1 = new List<Models.Telemetry>();
+        var startDate = DateTimeFromBase64(DateTStr) ;
+        var endDate = DateTimeFromBase64(DateTEtr) ;
+        War4Visible = false ;
+        if(ObjKod < 0 ) return ;
+         
+        try
+        {
+            if(War4 == 0 )
+            {
+               var tt = grpcClient.GetTelemetryServPeriodByObjKod(startDate,endDate,ObjKod);
+   
+               if (tt != null && tt.Count() > 0)
+               {
+                   HeaderStr = $"Телеметрия c {startDate.ToShortDateString()} {startDate.ToShortTimeString()} по {endDate.ToShortDateString()} {endDate.ToShortTimeString()} для объекта №{ObjKod}" ;
+                   TeleMetr1Title = HeaderStr ;
+                   Telemetries.AddRange(tt.OrderBy(ttt => ttt.Period)) ;
+                    Telemetries1.Add(new Models.Telemetry { Period = DateTime.Now , Value = 0 }) ;
+                   return;
+               }
+            }
+        }
+        catch { }
+
+        try
+        {
+            if(War4 == 1 )
+            {
+               var tt = grpcClient.GetWarning4(startDate,endDate,ObjKod);
+   
+               if (tt.Item1 != null && tt.Item1.Count() > 0 && tt.Item2 != null && tt.Item2.Count() > 0)
+               {
+                   HeaderStr = $"Телеметрия c {startDate.ToShortDateString()} {startDate.ToShortTimeString()} по {endDate.ToShortDateString()} {endDate.ToShortTimeString()} для объекта №{ObjKod} Type1" ;
+                   TeleMetr1Title = HeaderStr ;
+
+                   Telemetries.AddRange(tt.Item1.OrderBy(ttt => ttt.Period)) ;
+                   Telemetries1.AddRange(tt.Item2.OrderBy(ttt => ttt.Period)) ;
+                   TeleMetr2Title = "Телеметрия Type2" ;
+                   War4Visible = true ; 
+                   return;
+               }
+            }
+        }
+        catch { }
+
+        Telemetries1.Add(new Models.Telemetry { Period = DateTime.Now , Value = 0 }) ;
+        Telemetries.Add(new Models.Telemetry { Period = DateTime.Now , Value = 0 }) ;
+        HeaderStr = $"Нет данных телеметрии для объекта №{ObjKod}" ; 
+        TeleMetr1Title = HeaderStr ;   
+       
+    }
+
+    DateTime DateTimeFromBase64(string strBased)
+    {
+        var dbytes = System.Convert.FromBase64String(strBased);
+        var dstr = System.Text.Encoding.UTF8.GetString(dbytes);
+        return DateTime.Parse(dstr);
+    }
+    string GetDate()
+    {
+        return DateT.ToShortDateString();
+    }
+
+    string FormatAsTime(object value)
+    {
+        if (value is DateTime)
+        {
+            return ((DateTime)(value)).ToShortTimeString();
+        }
+        return "";
+    }
+
+    string FormatAsVal(object value)
+    {
+        if (value is float)
+        {
+            return $"{value}";
+        }
+        return "";
+    }
+}

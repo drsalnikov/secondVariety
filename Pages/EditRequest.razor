@@ -126,6 +126,11 @@
     }
     */
     User = (await authenticationStateTask).User;
+    if(User==null && !User.Identity.IsAuthenticated) 
+        return ;
+    if(!User.IsInRole("Administrator")&&!User.IsInRole("Manager"))
+       return ;
+
     var req = grpcClient.GetRequestById(Id) ;
 
     if(req!=null)

@@ -99,6 +99,9 @@
 <EventConsole @ref=@console Class="mt-4" />
 
 @code {
+  [CascadingParameter]
+  private Task<AuthenticationState> authenticationStateTask { get; set; }
+  private System.Security.Claims.ClaimsPrincipal? User ;
   private Request newRequest = new Request();
   private IEnumerable<SecondVariety.Models.Object> objects = Enumerable.Empty<SecondVariety.Models.Object>();
   int count;
@@ -138,6 +141,10 @@
       count = objects.Count();
       var lastnumbers = db1context.Requests.Select(r => r.Num).OrderBy(r => r).ToList();*/
       //lastnumber = lastnumbers.LastOrDefault() + 1;
+
+    User = (await authenticationStateTask).User;
+     if(!User.IsInRole("Administrator")&&!User.IsInRole("Manager"))
+       return ;
 
      var objs = grpcClient.GetObjects() ;
      objects = objs.OrderBy(o => o.Kod) ;

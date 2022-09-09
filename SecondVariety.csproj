@@ -53,5 +53,6 @@
       <Protobuf Include="Protos\narabotka.proto" GrpcServices="Client" />
       <Protobuf Include="Protos\requests.proto" GrpcServices="Client" />
       <Protobuf Include="Protos\telemetry.proto" GrpcServices="Client" />
+	   <Protobuf Include="Protos\tokens.proto" GrpcServices="Client" />
    </ItemGroup>
 </Project>

@@ -7,6 +7,11 @@ using Microsoft.EntityFrameworkCore;
 using SecondVariety.Areas.Identity.Data;
 using Radzen;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.ResponseCompression;
+//https://devblogs.microsoft.com/dotnet/configuring-https-in-asp-net-core-across-different-platforms/
+//https://docs.microsoft.com/en-us/azure/service-fabric/service-fabric-tutorial-dotnet-app-enable-https-endpoint
+//https://stackoverflow.com/questions/46621788/how-to-use-https-ssl-with-kestrel-in-asp-net-core-2-x
+//https://docs.microsoft.com/en-us/aspnet/core/fundamentals/servers/kestrel/endpoints?view=aspnetcore-6.0
 
 namespace SecondVariety
 {
@@ -14,7 +19,9 @@ namespace SecondVariety
   {
     public static void Main(string[] args)
     {
-      var builder = WebApplication.CreateBuilder(args);
+      WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
+
+
 
       // Add services to the container.
       var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -22,6 +29,9 @@ namespace SecondVariety
 
       // builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
       //           .AddEntityFrameworkStores<dbIdentityContext>();
+
+
+
 
       builder.Services.AddAuthorization(options =>
       {
@@ -47,8 +57,26 @@ namespace SecondVariety
       ///
 
       ///
-      builder.Services.AddServerSideBlazor();
+      //builder.Services.AddServerSideBlazor();
+      builder.Services.AddServerSideBlazor()
+       .AddHubOptions(options =>
+       {
+         options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+         options.EnableDetailedErrors = false;
+         options.HandshakeTimeout = TimeSpan.FromSeconds(15);
+         options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+         options.MaximumParallelInvocationsPerClient = 1;
+         options.MaximumReceiveMessageSize = 32 * 1024;
+         options.StreamBufferCapacity = 10;
+       });
 
+      builder.Services.AddResponseCompression(opts =>
+                   {
+                               opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+                                new[] { "application/octet-stream" });
+                   });
+      builder.Services.AddSignalR() ;             
+      //builder.Services.AddHttpContextAccessor();
       ///
 
 
@@ -60,10 +88,32 @@ namespace SecondVariety
       builder.Services.AddScoped<TooltipService>();
       builder.Services.AddScoped<ContextMenuService>();
       builder.Services.AddScoped<GrpcClientService>();
+
+
+      /*
+            builder.WebHost.ConfigureKestrel((HostingCont, Opts) =>
+            {
+
+              if (HostingCont.HostingEnvironment.IsDevelopment())
+              {
+                ////
+              }
+              else
+              {
+                Opts.Listen(System.Net.IPAddress.Parse("0.0.0.0"), 443, lopts =>
+                {
+                  lopts.UseHttps("./cert/certificate.pfx", "cerflehrf");
+                  lopts.
+                });
+              }
+            });
+            */
+
+
+
       var app = builder.Build();
 
       AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-
 
 
       // Configure the HTTP request pipeline.
@@ -78,6 +128,8 @@ namespace SecondVariety
         app.UseHsts();
       }
 
+
+
       app.UseHttpsRedirection();
 
       app.UseStaticFiles();
@@ -87,9 +139,38 @@ namespace SecondVariety
       app.UseAuthentication();
       app.UseAuthorization();
 
-      app.MapControllers();
-      app.MapBlazorHub();
-      app.MapFallbackToPage("/_Host");
+    
+
+      //app.MapBlazorHub();
+
+      //app.MapFallbackToPage("/_Host");
+
+      app.Use(async (context, next) =>
+      {
+        if (context.Request.Path
+                .Equals("/Logout", System.StringComparison.OrdinalIgnoreCase))
+        {
+          using (var scope = app.Services.CreateScope())
+          {
+            var sm = (SignInManager<IdentityUser>)scope.ServiceProvider.GetService(typeof(SignInManager<IdentityUser>));
+
+            if (sm != null)
+            {
+              var sotsk = sm.SignOutAsync();
+              sotsk.Wait();
+            }
+          }
+        }
+        await next();
+      });
+
+      app.UseEndpoints(endpoints =>
+            {
+              endpoints.MapRazorPages();
+              endpoints.MapControllers();
+              endpoints.MapBlazorHub();
+              endpoints.MapFallbackToPage("/_Host");
+            });
 
       ///create users and roles
       // createRolesandUsers(app.Services,"Worker","rabotnik@mail.ru","rabotnik","Ghjiksq$827");
@@ -98,21 +179,21 @@ namespace SecondVariety
       app.Run();
     }
 
-/*
+    /*
 
-    user.UserName = "mang";
-    user.Email = "manager@manager.com";
-    string userPWD = "Htrdbtv9324$";
+        user.UserName = "mang";
+        user.Email = "manager@manager.com";
+        string userPWD = "Htrdbtv9324$";
 
-    user.UserName = "admin";
-    user.Email = "admin@admin.com";
-    string userPWD = "Pfqrfgtht,trufq672!";
+        user.UserName = "admin";
+        user.Email = "admin@admin.com";
+        string userPWD = "Pfqrfgtht,trufq672!";
 
-    "Worker","rabotnik@mail.ru","rabotnik","Ghjiksq$827"
-*/
+        "Worker","rabotnik@mail.ru","rabotnik","Ghjiksq$827"
+    */
 
     ///create users and roles
-    private static void createRolesandUsers(IServiceProvider sprov,string urole,string mail,string uname,string pass)
+    private static void createRolesandUsers(IServiceProvider sprov, string urole, string mail, string uname, string pass)
     {
       using (var scope = sprov.CreateScope())
       {
@@ -121,7 +202,7 @@ namespace SecondVariety
 
         // "Administrator", "Manager", "Worker"    
         var manr = roleManager.Roles.FirstOrDefault(rr => rr.Name.Equals(urole));
-        
+
         if (manr == null)
         {
 

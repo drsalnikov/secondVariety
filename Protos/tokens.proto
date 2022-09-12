@@ -1,0 +1,13 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";  
+import "Protos/messages.proto" ;
+
+
+option csharp_namespace = "SecondVariety";
+package secondvariety;
+
+service GGetTokensServ {
+  rpc GetToken(GGetTokenClaims) returns(GClaim);
+}
+

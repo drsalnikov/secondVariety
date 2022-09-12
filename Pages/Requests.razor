@@ -2,11 +2,12 @@
 
 @using Microsoft.EntityFrameworkCore
 @using SecondVariety.Models;
-@using SecondVariety.Data;
+
 
 @inject NavigationManager nav
-@inject db1Context db1context
+
 @inject ContextMenuService ContextMenuService
+@inject GrpcClientService grpcClient 
 
   <h1>Заявки</h1>
   <div class="row gap-3">
@@ -51,101 +52,113 @@
     </RadzenCard>
   </div>
 
+  
 @code {
   //EventConsole console;
+ [CascadingParameter]
+ private Task<AuthenticationState> authenticationStateTask { get; set; }
+ private System.Security.Claims.ClaimsPrincipal? User ;
+ private IEnumerable<RequestDTO> myRequests = Enumerable.Empty<RequestDTO>();
+ //private IEnumerable<Request> requests = Enumerable.Empty<Request>();
 
-  private IEnumerable<RequestDTO> myRequests = Enumerable.Empty<RequestDTO>();
-  //private IEnumerable<Request> requests = Enumerable.Empty<Request>();
+ private bool isLoading;
+ //private int countRequests;
+ IList<RequestDTO> selectedRequest;
 
-  private bool isLoading;
-  //private int countRequests;
-  IList<RequestDTO> selectedRequest;
+ protected override async Task OnInitializedAsync()
+ {
+   await base.OnInitializedAsync();
+   await LoadData();
+ }
 
-  protected override async Task OnInitializedAsync()
-  {
-    await base.OnInitializedAsync();
-    await LoadData();
-  }
+ async Task LoadData()
+ {
+   isLoading = true;
 
-  async Task LoadData()
-  {
-    isLoading = true;
+   await Task.Yield();
+   User = (await authenticationStateTask).User;
+   if(!User.IsInRole("Administrator")&&!User.IsInRole("Manager"))
+       return ;
 
-    await Task.Yield();
+   var reqs = grpcClient.GetRequests() ;
+   var objs = grpcClient.GetObjects() ;
 
-    myRequests = (from r in db1context.Requests
-                  join o in db1context.Objects on r.KodObject equals o.Kod
-                  select new RequestDTO
-                 {
-                   Num = r.Num,
-                   Data = r.Data,
-                   KodObject = r.KodObject,
-                   NameObject = o.Name,
-                   DateFrom = r.DateFrom,
-                   DateTo = r.DateTo,
-                   DateFromFakt = r.DateFromFakt,
-                   DateToFakt = r.DateToFakt,
-                   Status = r.Status
-                 })
-                 .OrderBy(o => o.Num)
-                 .AsEnumerable();
-
-
-    //countRequests = requests.Count();
-
-    isLoading = false;
-
-  }
-
-  void OnAddNewClick()
-  {
-    nav.NavigateTo("/requests/new", true);
-  }
-
-  void Submit(RequestDTO arg)
-  {
-    //console.Log(arg);
-  }
-
-  void DeleteRequest(int? num)
-  {
-    if (!num.HasValue)
-      return;
-
-    Request? req = db1context.Requests.FirstOrDefault(r => r.Num == num);
-    if (req != null)
-    {
-      db1context.Requests.Remove(req);
-      db1context.SaveChanges();
-    }
-
-    nav.NavigateTo("/requests", true);
-  }
+   myRequests = (from r in reqs
+                 join o in objs on r.KodObject equals o.Id
+                 select new RequestDTO
+                {
+                  Num = r.Num,
+                  Data = r.Data,
+                  KodObject = r.KodObject,
+                  NameObject = o.Name??"",
+                  DateFrom = r.DateFrom,
+                  DateTo = r.DateTo,
+                  DateFromFakt = r.DateFromFakt,
+                  DateToFakt = r.DateToFakt,
+                  Status = (Models.StatusTypes)(r.Status??0),
+                  Id = r.Id
+                })
+                .OrderBy(o => o.Num)
+                .AsEnumerable();
 
 
-  void OnCellContextMenu(DataGridCellMouseEventArgs<RequestDTO> args)
-  {
-    selectedRequest = new List<RequestDTO>() { args.Data };
+   //countRequests = myRequests.Count();
 
-    ContextMenuService.Open(args,
-        new List<ContextMenuItem> {
-              new ContextMenuItem(){ Text = "Редактировать", Value = 1 },
-              new ContextMenuItem(){ Text = "Удалить", Value = 2 },
-          }, 
-          (e) => { 
-            switch (e.Value)
-            {
-              case 1:
-                nav.NavigateTo($"/requests/edit/{args.Data.Num}", true);
-                break;
-              case 2:
-                DeleteRequest(args.Data.Num);
-                break;
-            }
+   isLoading = false;
 
-            //console.Log($"e: {e.Value}. args: {args.Data.Num}."); 
-          }
-        );
-    }
+ }
 
-  }
+ void OnAddNewClick()
+ {
+   nav.NavigateTo("/requests/new", true);
+ }
+
+ void Submit(RequestDTO arg)
+ {
+   //console.Log(arg);
+ }
+
+ void DeleteRequest(long? num)
+ {
+   if (!num.HasValue)
+     return;
+
+   /*Request? req = db1context.Requests.FirstOrDefault(r => r.Num == num);
+   if (req != null)
+   {
+     db1context.Requests.Remove(req);
+     db1context.SaveChanges();
+   }
+*/
+   if(num!=null)
+     grpcClient.DeleteRequest(num??-1) ;
+
+   nav.NavigateTo("/requests", true);
+ }
+
+
+ void OnCellContextMenu(DataGridCellMouseEventArgs<RequestDTO> args)
+ {
+   selectedRequest = new List<RequestDTO>() { args.Data };
+
+   ContextMenuService.Open(args,
+       new List<ContextMenuItem> {
+             new ContextMenuItem(){ Text = "Редактировать", Value = 1 },
+             new ContextMenuItem(){ Text = "Удалить", Value = 2 },
+         }, 
+         (e) => { 
+           switch (e.Value)
+           {
+             case 1:
+               nav.NavigateTo($"/requests/edit/{args.Data.Id}", true);
+               break;
+             case 2:
+               DeleteRequest(args.Data.Id);
+               break;
+           }
+
+           //console.Log($"e: {e.Value}. args: {args.Data.Num}."); 
+         }
+       );
+   }
+}

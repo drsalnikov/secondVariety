@@ -1,0 +1,22 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";  
+import "Protos/messages.proto" ;
+import "google/protobuf/empty.proto";
+
+option csharp_namespace = "SecondVariety";
+package secondvariety;
+
+service TelemetryServ {
+  rpc GetForDate(google.protobuf.Timestamp) returns(GTelemetrys);
+  rpc GetById(GObjectId) returns(GTelemetry);
+  rpc GetForPeriod(GTelemetryPeriod) returns(GTelemetrys) ;
+  rpc GetForPeriodForObjectByKod(GTelemetryPeriodForObject) returns(GTelemetrys) ;
+  rpc GetForPeriodForObjectWarning4(GTelemetryPeriodForObject) returns(GTelemetryTwoTypes) ;
+  rpc GetLastTrainedRecId(google.protobuf.Empty) returns(GObjectId);
+  rpc TrainingObj(GObjectId) returns(Empty) ;
+  rpc CheckingObj(GObjectId) returns(Empty) ;
+  rpc Post(GTelemetry) returns(GTelemetry);
+  rpc Put(GTelemetry) returns(GTelemetry);
+  rpc Delete(GObjectId) returns(Empty);
+}

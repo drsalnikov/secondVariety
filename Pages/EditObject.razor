@@ -1,13 +1,14 @@
-﻿@page "/objects/edit/{Kod:int}"
+﻿@page "/objects/edit/{Id:int}"
 
 @using Microsoft.EntityFrameworkCore
 @using SecondVariety.Models;
-@using SecondVariety.Data;
 @using Object = SecondVariety.Models.Object
-@inject db1Context db1context
+
 @inject NavigationManager nav
+@inject GrpcClientService grpcClient 
 
   <h1>Редактирование Объекта</h1>
+
   <RadzenTemplateForm TItem="Object" Data="@myObj" Submit="@OnSubmit">
     <div class="row gap-3">
       <div class="col">
@@ -17,6 +18,7 @@
         </RadzenFieldset>
       </div>
     </div>
+
       <div class="row gap-3">
         <div class="col">
           <RadzenFieldset Text="Информация об объекте">
@@ -25,11 +27,14 @@
                 <RadzenLabel Text="Наименование:" />
                 <RadzenTextBox @bind-Value=@myObj.Name />
               </div>
+            
               <div class="col align-items-center">
                 <RadzenLabel Text="Код:" />
                 <RadzenNumeric TValue="int" @bind-Value=@myObj.Kod />
               </div>
+           
             </div>
+           
             <div class="row">
               <div class="col align-items-center">
                 <RadzenLabel Text="Дата последнего ТО:" />
@@ -49,10 +54,13 @@
                 <RadzenLabel Text="Межремонтный интервал (моточасы):" />
                 <RadzenNumeric TValue="float?" @bind-Value=@myObj.ToNar />
               </div>
-            </div>
+            </div>  
           </RadzenFieldset>
         </div>
+          
       </div>
+  
+  
       <div class="row gap-3">
         <div class="col">
           <RadzenFieldset Text="Наработка">
@@ -97,7 +105,11 @@
           </RadzenFieldset>
         </div>
       </div>
+    
   </RadzenTemplateForm>
+
+
+
   <div class="row gap-3">
     <div class="col">
       <RadzenFieldset Text="Заявки">
@@ -132,6 +144,7 @@
       </RadzenFieldset>
     </div>
   </div>
+ 
   <div class="row gap-3">
     <div class="col">
       <RadzenFieldset Text="Наработка">
@@ -207,7 +220,10 @@
 
 @code {
   [Parameter]
-  public int Kod { get; set; }
+  public int Id { get; set; }
+  [CascadingParameter]
+  private Task<AuthenticationState> authenticationStateTask { get; set; }
+  private System.Security.Claims.ClaimsPrincipal? User ;
   RadzenDataGrid<Narabotka> narabotkiGrid;
   Narabotka narabotkaToInsert;
 
@@ -224,7 +240,12 @@
 
   protected override async Task OnInitializedAsync()
   {
-    myObj = db1context.Objects.FirstOrDefault(o => o.Kod == Kod);
+   // myObj = db1context.Objects.FirstOrDefault(o => o.Kod == Kod);
+    User = (await authenticationStateTask).User;
+     if(!User.IsInRole("Administrator"))
+       return ;
+    myObj = grpcClient.GetObjectById(Id);  
+
     await base.OnInitializedAsync();
     await LoadData();
   }
@@ -234,7 +255,7 @@
     isLoading = true;
     await Task.Yield();
 
-    if (myObj == null)
+  /*  if (myObj == null)
     {
       myObj = db1context.Objects.FirstOrDefault(o => o.Kod == Kod);
     }
@@ -245,7 +266,19 @@
     narabotki = narabotkiQuery.ToList();
     countNarabotka = narabotki.Count();
     isLoading = false;
+*/
+    if(myObj==null)
+    {
+     
+     myObj = grpcClient.GetObjectById(Id);  
 
+    }
+    requests = await grpcClient.GetRequestByObjectKod(myObj.Id) ;
+    countRequests = requests.Count();
+    var enar    = await grpcClient.GetNarabotkasByObjectKod(myObj.Id) ;
+    narabotki  = enar.ToList() ;
+    countNarabotka = narabotki.Count();
+    isLoading = false;
   }
 
   async Task EditRowNarabotka(Narabotka narabotka)
@@ -259,10 +292,12 @@
     {
       narabotkaToInsert = null;
     }
+    
+    grpcClient.UpdateNarabotka(narabotka) ;
+   /* db1context.Narabotkas.Update(narabotka);
+    db1context.SaveChanges();*/
 
-    db1context.Narabotkas.Update(narabotka);
-    db1context.SaveChanges();
-    //narabotkiGrid.Reload();
+    narabotkiGrid.Reload();
   }
 
   async Task SaveRowNarabotka(Narabotka narabotka)
@@ -271,10 +306,10 @@
     {
       narabotkaToInsert = null;
     }
-    if (!narabotka.KodObject.HasValue)
-    {
-      narabotka.KodObject = myObj.Kod;
-    }
+    //if (!narabotka.KodObject.HasValue)
+    //{
+      narabotka.KodObject = myObj.Id;
+    //}
     await narabotkiGrid.UpdateRow(narabotka);
     //await narabotkiGrid.Reload();
   }
@@ -288,12 +323,12 @@
 
     narabotkiGrid.CancelEditRow(narabotka);
 
-    var narabotkaEntry = db1context.Entry(narabotka);
+    /*var narabotkaEntry = db1context.Entry(narabotka);
     if (narabotkaEntry.State == EntityState.Modified)
     {
       narabotkaEntry.CurrentValues.SetValues(narabotkaEntry.OriginalValues);
       narabotkaEntry.State = EntityState.Unchanged;
-    }
+    }*/
   }
 
   async Task DeleteRowNarabotka(Narabotka narabotka)
@@ -305,9 +340,15 @@
 
     if (narabotki.Contains(narabotka))
     {
-      db1context.Narabotkas.Remove(narabotka);
+     /* db1context.Narabotkas.Remove(narabotka);
       db1context.SaveChanges();
       narabotki.Remove(narabotka);
+*/
+      grpcClient.DeleteNarabotka(narabotka.Id);
+
+      var enar    = grpcClient.GetNarabotkasByObjectKodSync(myObj.Id) ;
+      narabotki  = enar.ToList() ;
+      countNarabotka = narabotki.Count();
 
       await narabotkiGrid.Reload();
     }
@@ -325,8 +366,8 @@
   async Task InsertRowNarabotka()
   {
     narabotkaToInsert = new Narabotka();
-    narabotkaToInsert.KodObject = myObj.Kod;
-    narabotkaToInsert.Data = DateTime.Now;
+    narabotkaToInsert.KodObject = myObj.Id;
+    narabotkaToInsert.Data =  DateTime.Now;
     //await narabotkiGrid.InsertRow(narabotkaToInsert);
     
     if (narabotki.Count == 0)
@@ -345,16 +386,26 @@
 
   void OnCreateRowNarabotka(Narabotka narabotka)
   {
-      db1context.Narabotkas.Add(narabotka);
+      
+      /*db1context.Narabotkas.Add(narabotka);
       db1context.SaveChanges();
-      //narabotkiGrid.Reload();
+*/      
+        grpcClient.AddNarabotka(narabotka) ;
+        var enar    = grpcClient.GetNarabotkasByObjectKodSync(myObj.Id) ;
+        narabotki  = enar.ToList() ;
+        countNarabotka = narabotki.Count();
+        narabotkiGrid.Reload();
   }
 
   void OnSubmit(Object arg)
   {
+    /*  
       db1context.Objects.Update(arg);
       db1context.SaveChanges();
-      nav.NavigateTo($"/objects/edit/{arg.Kod}", true);
+      */
+      if(arg!=null)
+        grpcClient.UpdateObject(arg) ;
+      nav.NavigateTo($"/objects/edit/{arg.Id}", true);
   }
 
   void Cancel()

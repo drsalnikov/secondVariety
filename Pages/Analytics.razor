@@ -5,10 +5,8 @@
 @using Microsoft.ML.Data;
 @using System.Globalization;
 @using SecondVariety.Models;
-@using SecondVariety.Data;
 @using Object = SecondVariety.Models.Object
 
-@inject db1Context db1context
 @inject NavigationManager nav
 
 <h1>Аналитика ситуации 1</h1>
@@ -62,10 +60,10 @@
   protected override async Task OnInitializedAsync()
   {
     await base.OnInitializedAsync();
-    await LoadData();
+   // await LoadData();
 
   }
-
+/*
   async Task LoadData()
   {
     isLoading = true;
@@ -130,7 +128,7 @@
        }
    }
   }
-
+*/
   string FormatAsValue(object value)
   {
       return ((double)value).ToString("F2", CultureInfo.CreateSpecificCulture("ru-RU"));

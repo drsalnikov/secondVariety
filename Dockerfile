@@ -2,21 +2,23 @@
 
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
 WORKDIR /app
+
 EXPOSE 80
 EXPOSE 443
 
+RUN rm -rf /app/*
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY ["SecondVariety.csproj", "."]
-RUN dotnet restore "./SecondVariety.csproj"
+RUN rm -rf /src/*
 COPY . .
-WORKDIR "/src/."
-RUN dotnet build "SecondVariety.csproj" -c Release -o /app/build
 
-FROM build AS publish
-RUN dotnet publish "SecondVariety.csproj" -c Release -o /app/publish
 
-FROM base AS final
+RUN dotnet restore
+RUN dotnet publish -c Release -o /app 
+RUN cp -rf /src/cert /app
+WORKDIR /
+RUN rm -rf /src
 WORKDIR /app
-COPY --from=publish /app/publish .
+#RUN dotnet dev-certs https
+#RUN dotnet dev-certs https --trust
 ENTRYPOINT ["dotnet", "SecondVariety.dll"]

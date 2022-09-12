@@ -2,20 +2,22 @@
 
 @using System.Linq.Dynamic.Core
 @using SecondVariety.Models;
-@using SecondVariety.Data;
-
+@using System.Linq;
 @inject NavigationManager nav
-@inject db1Context db1context
 @inject ContextMenuService ContextMenuService
+@inject GrpcClientService grpcClient 
 
   <h1>Объекты</h1>
-  <div class="row gap-3">
-    <div class="col">
-      <RadzenFieldset Text="Действия" class="gap-3">
-        <RadzenButton Click=@OnAddNewClick Text="Создать" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
-      </RadzenFieldset>
-    </div>
-  </div>
+    <AuthorizeView Roles="Administrator">
+     <div class="row gap-3">
+       <div class="col">
+         <RadzenFieldset Text="Действия" class="gap-3">
+           <RadzenButton Click=@OnAddNewClick Text="Создать" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
+         </RadzenFieldset>
+       </div>
+     </div>
+    </AuthorizeView>
+      
   <div class="row gap-3">    
     <RadzenDataGrid
         IsLoading="@isLoading"
@@ -33,15 +35,23 @@
         CellContextMenu="@OnCellContextMenu"
     >
         <Columns>
-            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="Kod" Title="Код" Width="50px" TextAlign="TextAlign.Center" />
-            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="Name" Title="Наименование" Width="120px" />
-            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="LastTo" Title="Дата последнего ТО"  FormatString="{0:d}" Width="120px"/>
-            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="NextTo" Title="Дата следующего ТО"  FormatString="{0:d}" Width="120px"/>
-            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="DateFrom" Title="Начальная дата"  FormatString="{0:d}" Width="120px"/>
-            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="NarFrom" Title="Начальное значение наработки" Width="120px" />
-            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="PlanYear" Title="Планируемая наработка в год" Width="120px" />
-            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="TekNar" Title="Текущая наработка" Width="120px" />
-            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="SredNar" Title="Среднедневная наработка" Width="120px" />
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="Kod" Title="Код" Width="25px" TextAlign="TextAlign.Center" />
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="Name" Title="Наименование" Width="75px" />
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="LastTo" Title="Дата последнего ТО"  FormatString="{0:d}" Width="75px"/>
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="NextTo" Title="Дата следующего ТО"  FormatString="{0:d}" Width="75px"/>
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="DateFrom" Title="Начальная дата"  FormatString="{0:d}" Width="75px"/>
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="NarFrom" Title="Начальное значение наработки" Width="60px" />
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="PlanYear" Title="Планируемая наработка в год" Width="70px" />
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="TekNar" Title="Текущая наработка" Width="55px" />
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="SredNar" Title="Среднедневная наработка" Width="70px" />
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="WarningType" Title="Предупреждение" Width="75px" >
+                <Template Context="cont">
+                  <div style="background-color:@GetColor(cont.WarningType)">
+                   <span>@cont.WarningType </span>
+                  </div>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn  TItem="SecondVariety.Models.Object" Property="WarningTime" FormatString="{0:d}" Title="Время предупреждения" Width="70px" />
         </Columns>
     </RadzenDataGrid>
   </div>
@@ -50,9 +60,13 @@
       <span class="console-message-text">*Для редактирования таблицы, используйте правую кнопку мыши.</span>
     </RadzenCard>
   </div>
+ 
 @code {
+  [CascadingParameter]
+  private Task<AuthenticationState> authenticationStateTask { get; set; }
+  private System.Security.Claims.ClaimsPrincipal? User ;
   //RadzenDataGrid<SecondVariety.Models.Object> grid;
-  private IQueryable<SecondVariety.Models.Object> objects;
+  private IEnumerable<SecondVariety.Models.Object> objects;
   IList<SecondVariety.Models.Object> selected;
   private bool isLoading = false;
   private int count;
@@ -68,50 +82,131 @@
   {
     isLoading = true;
     await Task.Yield();
-    objects = db1context.Objects.OrderBy(o => o.Kod).AsQueryable();
+    User = (await authenticationStateTask).User;
+    if(!User.IsInRole("Administrator")&&!User.IsInRole("Manager")&&!User.IsInRole("Worker"))
+    {
+      return;
+    }
+     var objs = grpcClient.GetObjects() ;
+    objects = objs.OrderBy(o => o.Kod) ;
+    //.OrderBy(o => o.Kod); //db1context.Objects.OrderBy(o => o.Kod).AsQueryable();
     count = objects.Count();
     isLoading = false;
   }
 
   void OnAddNewClick()
   {
-    nav.NavigateTo("/objects/new", true);
+    if(User.IsInRole("Administrator"))
+    {
+      nav.NavigateTo("/objects/new", true);
+    }
+  }
+
+  string GetColor(int? wt)
+  {
+      if(wt==null) return "white" ;
+      switch(wt)
+      {
+        case 0:
+            return "#96f480" ;
+            
+        case 1:
+            return "#d5e969" ; 
+        
+        case 2:
+            return "#f49f58" ;
+          
+        case 3:
+            return "#f18989" ;
+          
+        case 4:
+           return "#ed3636" ;
+           
+      }
+      return "red";
   }
 
   void OnCellContextMenu(DataGridCellMouseEventArgs<SecondVariety.Models.Object> args)
   {
     selected = new List<SecondVariety.Models.Object>() { args.Data };
+    if(User.IsInRole("Administrator"))
+    {
+     DateTime sdtime ;
+     DateTime edtime ;
+     bool warning4 = false ;
+
+     if(args.Data.WarningType!=null && args.Data.WarningType>0) 
+     {
+         sdtime = args.Data.WarningTime??DateTime.Now;
+         edtime = sdtime.AddMinutes(61);
+         warning4 = (args.Data.WarningType == 4);
+     }
+     else
+     {
+        sdtime = DateTime.Now ;
+        edtime =sdtime.AddHours(2) ;
+     }
+
+     var startBased = DateTimeToBase64(sdtime) ;
+     var endBased = DateTimeToBase64(edtime) ;
 
     ContextMenuService.Open(args,
         new List<ContextMenuItem> {
-              new ContextMenuItem(){ Text = "Редактировать", Value = 1 },
-              new ContextMenuItem(){ Text = "Удалить", Value = 2 },
+              new ContextMenuItem(){ Text = "Телеметрия", Value = 1 },             
+              new ContextMenuItem(){ Text = "Редактировать", Value = 2 },
+              new ContextMenuItem(){ Text = "Удалить", Value = 3 },
+              new ContextMenuItem(){ Text = "Обучить", Value = 4 },
+              new ContextMenuItem(){ Text = "Проверить обучение", Value = 5 }
           }, 
           (e) => { 
             switch (e.Value)
             {
               case 1:
-                nav.NavigateTo($"/objects/edit/{args.Data.Kod}", true);
-                break;
+                nav.NavigateTo($"/telemetry/{args.Data.Kod}/{startBased}/{endBased}/{(warning4?1:0)}/{args.Data.Kod}", true);
+                ContextMenuService.Close() ;
+                break ;
               case 2:
-                DeleteObject(args.Data.Kod);
+                nav.NavigateTo($"/objects/edit/{args.Data.Id}", true);
+                ContextMenuService.Close() ;
                 break;
+              case 3:
+                DeleteObject(args.Data.Id);
+                ContextMenuService.Close() ;
+                break;
+              case 4:
+                grpcClient.TelemetryTrainingObj(args.Data.Kod) ;
+                 ContextMenuService.Close() ;
+                break ;
+              case 5:                
+                grpcClient.CheckingTrainingObj(args.Data.Kod) ;
+                 ContextMenuService.Close() ;
+                break;  
+
             }
 
             //console.Log($"e: {e.Value}. args: {args.Data.Num}."); 
           }
         );
+     }
   }
 
-  void DeleteObject(int kod)
+  string DateTimeToBase64(DateTime dt)
   {
-    SecondVariety.Models.Object? myObj = db1context.Objects.FirstOrDefault(r => r.Kod == kod);
+     var dbytes = System.Text.Encoding.UTF8.GetBytes(dt.ToString()) ;
+     var dbased = Convert.ToBase64String(dbytes); 
+     return dbased ;
+  }
+  void DeleteObject(int Id)
+  {
+  /*  SecondVariety.Models.Object? myObj = db1context.Objects.FirstOrDefault(r => r.Kod == kod);
     if (myObj != null)
     {
       db1context.Objects.Remove(myObj);
       db1context.SaveChanges();
     }
-
-    nav.NavigateTo("/objects", true);
+*/  
+    grpcClient.DeleteObject(Id);
+   
+    
   }
 }

@@ -350,5 +350,6 @@ MigrationBackup/
 .ionide/
 
 obj/
+bin/
 
 appsettings.json

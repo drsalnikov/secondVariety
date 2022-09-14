@@ -55,4 +55,6 @@
       <Protobuf Include="Protos\telemetry.proto" GrpcServices="Client" />
 	   <Protobuf Include="Protos\tokens.proto" GrpcServices="Client" />
    </ItemGroup>
+
+	<ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
 </Project>

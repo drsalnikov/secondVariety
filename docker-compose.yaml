@@ -1,9 +1,8 @@
+version: "3.9" 
 services:
-  app1:
-    container_name: secvar
-    image: "cr.yandex/crpk0diklk28mrtmsjsk/secvar"
+  frontend:
+    build: ./
     ports:
       - "80:80"
       - "443:443"
-      -
     restart: always

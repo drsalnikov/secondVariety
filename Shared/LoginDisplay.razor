@@ -4,30 +4,6 @@
 @inject IHttpContextAccessor httpContextAccessor
 
 
-<AuthorizeView>
-    <Authorized>
-        <div>
-                  <div style="float:left">
-                                        <a href="Identity/Account/Manage">Добро пожаловать, @context.User.Identity?.Name!</a>
-                  </div>
-
-     <!--   <form method="post" action="Identity/Account/LogOut">
-            <button type="submit" class="nav-link btn btn-link">Выйти</button>
-        </form>
-        -->&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        <div style="float:right">
-        <RadzenButton Click="@Logout" Text="Выйти" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Info" />
-        </div>
-      </div>
-    </Authorized>
-    <NotAuthorized>
-      <!--  <a href="Identity/Account/Register">Register</a> 
-        <a href="Identity/Account/Login">Log in</a>-->
-
-        Авторизуйтесь для работы
-    </NotAuthorized>
-</AuthorizeView>
-
 
 @code{
     void Logout()

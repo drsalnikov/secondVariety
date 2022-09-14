@@ -6,6 +6,19 @@
       <RadzenPanelMenuItem class="text-decoration-none" Text="Заявки" Path="requests" Icon="account_circle"></RadzenPanelMenuItem>
      </AuthorizeView>
     </RadzenPanelMenuItem>
+    <AuthorizeView Roles="Administrator,Manager">
+      <RadzenPanelMenuItem Text="Аналитика" Icon="build">
+        <RadzenPanelMenuItem class="text-decoration-none" Text="Объекты" Path="objects" Icon="build"></RadzenPanelMenuItem>
+        <RadzenPanelMenuItem class="text-decoration-none" Text="Заявки" Path="requests" Icon="account_circle"></RadzenPanelMenuItem>
+      </RadzenPanelMenuItem>
+    </AuthorizeView>
+    <AuthorizeView Roles="Administrator,Manager">
+      <RadzenPanelMenuItem Text="Загрузка данных" Icon="build">
+        <RadzenPanelMenuItem class="text-decoration-none" Text="Телеметрия" Path="" Icon="build"></RadzenPanelMenuItem>
+        <RadzenPanelMenuItem class="text-decoration-none" Text="Заявка" Path="" Icon="account_circle"></RadzenPanelMenuItem>
+      </RadzenPanelMenuItem>
+    </AuthorizeView>
+
     <!--
     <AuthorizeView Roles="Administrator">
     <RadzenPanelMenuItem Text="Аналитика" Icon="assessment">

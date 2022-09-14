@@ -21,17 +21,11 @@ namespace SecondVariety
     {
       WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
 
-
-
       // Add services to the container.
       var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-
       // builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
       //           .AddEntityFrameworkStores<dbIdentityContext>();
-
-
-
 
       builder.Services.AddAuthorization(options =>
       {
@@ -39,7 +33,6 @@ namespace SecondVariety
         policy.RequireRole("Administrator", "Manager", "Worker"));
       });
 
-      ///
       builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
                       .AddRoles<IdentityRole>()
                       .AddEntityFrameworkStores<dbIdentityContext>();
@@ -47,17 +40,10 @@ namespace SecondVariety
       builder.Services.AddDbContext<dbIdentityContext>(options =>
                                                        options.UseNpgsql(connectionString));
 
-
       builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-
-
 
       builder.Services.AddRazorPages();
 
-      ///
-
-      ///
-      //builder.Services.AddServerSideBlazor();
       builder.Services.AddServerSideBlazor()
        .AddHubOptions(options =>
        {
@@ -70,17 +56,14 @@ namespace SecondVariety
          options.StreamBufferCapacity = 10;
        });
 
-      builder.Services.AddResponseCompression(opts =>
-                   {
-                               opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
-                                new[] { "application/octet-stream" });
-                   });
-      builder.Services.AddSignalR() ;             
+      //builder.Services.AddResponseCompression(opts =>
+      //{
+      //  opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/octet-stream" });
+      //});
+      builder.Services.AddSignalR();
+
       //builder.Services.AddHttpContextAccessor();
-      ///
 
-
-      ///
       //builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
 
       builder.Services.AddScoped<DialogService>();
@@ -89,32 +72,27 @@ namespace SecondVariety
       builder.Services.AddScoped<ContextMenuService>();
       builder.Services.AddScoped<GrpcClientService>();
 
-
       /*
-            builder.WebHost.ConfigureKestrel((HostingCont, Opts) =>
-            {
-
-              if (HostingCont.HostingEnvironment.IsDevelopment())
-              {
-                ////
-              }
-              else
-              {
-                Opts.Listen(System.Net.IPAddress.Parse("0.0.0.0"), 443, lopts =>
-                {
-                  lopts.UseHttps("./cert/certificate.pfx", "cerflehrf");
-                  lopts.
-                });
-              }
-            });
-            */
-
-
+      builder.WebHost.ConfigureKestrel((HostingCont, Opts) =>
+      {
+        if (HostingCont.HostingEnvironment.IsDevelopment())
+        {
+          ////
+        }
+        else
+        {
+          Opts.Listen(System.Net.IPAddress.Parse("0.0.0.0"), 443, lopts =>
+          {
+            lopts.UseHttps("./cert/certificate.pfx", "cerflehrf");
+            lopts.
+          });
+        }
+      });
+      */
 
       var app = builder.Build();
 
       AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-
 
       // Configure the HTTP request pipeline.
       if (app.Environment.IsDevelopment())
@@ -128,8 +106,6 @@ namespace SecondVariety
         app.UseHsts();
       }
 
-
-
       app.UseHttpsRedirection();
 
       app.UseStaticFiles();
@@ -137,9 +113,8 @@ namespace SecondVariety
       app.UseRouting();
 
       app.UseAuthentication();
-      app.UseAuthorization();
 
-    
+      app.UseAuthorization();
 
       //app.MapBlazorHub();
 
@@ -152,12 +127,12 @@ namespace SecondVariety
         {
           using (var scope = app.Services.CreateScope())
           {
-            var sm = (SignInManager<IdentityUser>)scope.ServiceProvider.GetService(typeof(SignInManager<IdentityUser>));
+            var sm = scope.ServiceProvider.GetService(typeof(SignInManager<IdentityUser>)) as SignInManager<IdentityUser>;
 
             if (sm != null)
             {
               var sotsk = sm.SignOutAsync();
-              sotsk.Wait();
+              sotsk.Wait(10000);
             }
           }
         }
@@ -193,19 +168,19 @@ namespace SecondVariety
     */
 
     ///create users and roles
+    /*
     private static void createRolesandUsers(IServiceProvider sprov, string urole, string mail, string uname, string pass)
     {
       using (var scope = sprov.CreateScope())
       {
-        var userManager = (UserManager<IdentityUser>)scope.ServiceProvider.GetService(typeof(UserManager<IdentityUser>));
-        var roleManager = (RoleManager<IdentityRole>)scope.ServiceProvider.GetService(typeof(RoleManager<IdentityRole>));
+        var userManager = scope.ServiceProvider.GetService(typeof(UserManager<IdentityUser>)) as UserManager<IdentityUser>;
+        var roleManager = scope.ServiceProvider.GetService(typeof(RoleManager<IdentityRole>)) as RoleManager<IdentityRole>;
 
         // "Administrator", "Manager", "Worker"    
         var manr = roleManager.Roles.FirstOrDefault(rr => rr.Name.Equals(urole));
 
         if (manr == null)
         {
-
           var role = new IdentityRole();
           role.Name = urole;
           var rtsk = roleManager.CreateAsync(role);
@@ -254,8 +229,7 @@ namespace SecondVariety
 
       }
     }
-
-
+    */
     ///
   }
 }

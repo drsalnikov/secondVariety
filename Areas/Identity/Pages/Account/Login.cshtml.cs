@@ -79,6 +79,7 @@ namespace SecondVariety.Areas.Identity.Pages.Account
       /// </summary>
       [Required]
       [DataType(DataType.Password)]
+      [Display(Name = "Пароль")]
       public string Password { get; set; }
 
       /// <summary>
@@ -109,6 +110,11 @@ namespace SecondVariety.Areas.Identity.Pages.Account
     public async Task<IActionResult> OnPostAsync(string returnUrl = null)
     {
       returnUrl ??= Url.Content("~/");
+
+      if (returnUrl.ToUpper().Contains("LOGOUT"))
+      {
+        returnUrl = "/";
+      }
 
       ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 

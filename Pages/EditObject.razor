@@ -216,17 +216,16 @@
     </div>
   </div>
 
-  <EventConsole @ref=@console Class="mt-4" />
-
 @code {
   [Parameter]
   public int Id { get; set; }
+
   [CascadingParameter]
   private Task<AuthenticationState> authenticationStateTask { get; set; }
-  private System.Security.Claims.ClaimsPrincipal? User ;
-  RadzenDataGrid<Narabotka> narabotkiGrid;
-  Narabotka narabotkaToInsert;
 
+  private System.Security.Claims.ClaimsPrincipal? User ;
+  RadzenDataGrid<Narabotka> narabotkiGrid = new RadzenDataGrid<Narabotka>();
+  Narabotka narabotkaToInsert;
   EventConsole console;
 
   private IEnumerable<Request> requests = Enumerable.Empty<Request>();

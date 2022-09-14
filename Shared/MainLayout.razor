@@ -1,44 +1,80 @@
 ﻿@inherits LayoutComponentBase
+@using System.Security.Claims;
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.AspNetCore.Mvc.ViewEngines
+
 @inject NavigationManager nav
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@inject IWebHostEnvironment Environment
+@inject ICompositeViewEngine Engine
+
+<header>
+  <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+    <div class="container">
+      <NavMenu />
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
+        <ul class="navbar-nav">
+          @if (SignInManager.IsSignedIn(User))
+          {
+            <li class="nav-item">
+              <a id="manage" href="Identity/Account/Manage" class="btn btn-link nav-link text-dark text-decoration-none" asp-area="Identity" asp-page="Account/Manage" title="Manage">Войти в ЛК, @UserManager.GetUserName(User)!</a>
+            </li>
+            <li class="nav-item">
+              <a id="manage" href="Logout" class="btn btn-link nav-link text-dark text-decoration-none" role="button" title="Manage">Выйти</a>
+            </li>
+          }
+          else
+          {
+            <li class="nav-item">
+              <a class="nav-link text-dark" id="login" asp-area="Identity" asp-page="/Account/Login">Войти</a>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  </nav>
+</header>
 
 <PageTitle>Второй вариант</PageTitle>
 
 <div class="page">
-
-    <AuthorizeView Roles="Administrator, Manager, Worker">
-        <Authorized>
-            <div class="sidebar">
-                <NavMenu />
-            </div>
-
-            <main>
-                <article class="content px-4">
-                    @Body
-                </article>
-
-                <RadzenDialog />
-                <RadzenNotification />
-                <RadzenContextMenu />
-                <RadzenTooltip />
-            </main>
-        </Authorized>
-        <NotAuthorized>
-            Требуется авторизация
-        </NotAuthorized>
-    </AuthorizeView>
-
-
+  <AuthorizeView Roles="Administrator, Manager, Worker">
+    <Authorized>
+      <main>
+        <article class="content px-4">
+          @Body
+        </article>
+        <RadzenDialog />
+        <RadzenNotification />
+        <RadzenContextMenu />
+        <RadzenTooltip />
+      </main>
+    </Authorized>
+    <NotAuthorized>
+        Требуется авторизация
+    </NotAuthorized>
+  </AuthorizeView>
 </div>
 
-      @code {
-               [CascadingParameter]
-                private Task<AuthenticationState> authenticationStateTask { get; set; }
-                protected override async Task OnInitializedAsync()
-                {
-                    var autsk = (await authenticationStateTask) ;
-                    var user = autsk.User;
-                    if(!user.Identity.IsAuthenticated)
-                        nav.NavigateTo("/Identity/Account/Login",true) ;
-                }
-            }
+@code {
+  [CascadingParameter]
+  private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+  private ClaimsPrincipal User { get; set; }
+
+  protected override async Task OnInitializedAsync()
+  {
+    var autsk = (await authenticationStateTask) ;
+    User = autsk.User;
+    if (!autsk.User.Identity.IsAuthenticated)
+    {
+      nav.NavigateTo("/Identity/Account/Login", true);
+    }
+  }
+}

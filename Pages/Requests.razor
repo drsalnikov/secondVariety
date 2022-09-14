@@ -12,11 +12,9 @@
   <h1>Заявки</h1>
   <div class="row gap-3">
     <RadzenFieldset Text="Действия" class="gap-3">
-      <RadzenButton 
-        Click=@OnAddNewClick
-        Text="Создать" 
-        Icon="add_circle_outline" 
-        ButtonStyle="ButtonStyle.Primary" />
+      <RadzenButton Click=@OnAddNewClick Text="Создать" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
+      <RadzenButton Click=@OnEditClick Text="Редактировать" Disabled=@isSelected() Icon="save" ButtonStyle="ButtonStyle.Secondary" />
+      <RadzenButton Click=@OnDeleteClick Text="Удалить" Disabled=@isSelected() Icon="report" ButtonStyle="ButtonStyle.Danger" />
     </RadzenFieldset>
   </div>
   <div class="row gap-3">
@@ -30,7 +28,7 @@
               ColumnWidth="480px" 
               IsLoading="@isLoading"
               SelectionMode="DataGridSelectionMode.Single" 
-              @bind-Value=@selectedRequest 
+              @bind-Value=@selected 
               CellContextMenu="@OnCellContextMenu"
               >
               <Columns>
@@ -55,37 +53,35 @@
   
 @code {
   //EventConsole console;
- [CascadingParameter]
- private Task<AuthenticationState> authenticationStateTask { get; set; }
- private System.Security.Claims.ClaimsPrincipal? User ;
- private IEnumerable<RequestDTO> myRequests = Enumerable.Empty<RequestDTO>();
- //private IEnumerable<Request> requests = Enumerable.Empty<Request>();
+  [CascadingParameter]
+  private Task<AuthenticationState> authenticationStateTask { get; set; }
 
- private bool isLoading;
- //private int countRequests;
- IList<RequestDTO> selectedRequest;
+  private System.Security.Claims.ClaimsPrincipal? User ;
+  private IEnumerable<RequestDTO> myRequests = Enumerable.Empty<RequestDTO>();
+  private bool isLoading;
+  IList<RequestDTO> selected;
 
- protected override async Task OnInitializedAsync()
- {
-   await base.OnInitializedAsync();
-   await LoadData();
- }
+  protected override async Task OnInitializedAsync()
+  {
+    await base.OnInitializedAsync();
+    await LoadData();
+  }
 
- async Task LoadData()
- {
-   isLoading = true;
+  async Task LoadData()
+  {
+    isLoading = true;
 
-   await Task.Yield();
-   User = (await authenticationStateTask).User;
-   if(!User.IsInRole("Administrator")&&!User.IsInRole("Manager"))
-       return ;
+    await Task.Yield();
+    User = (await authenticationStateTask).User;
+    if(!User.IsInRole("Administrator")&&!User.IsInRole("Manager"))
+        return ;
 
-   var reqs = grpcClient.GetRequests() ;
-   var objs = grpcClient.GetObjects() ;
+    var reqs = grpcClient.GetRequests() ;
+    var objs = grpcClient.GetObjects() ;
 
-   myRequests = (from r in reqs
-                 join o in objs on r.KodObject equals o.Id
-                 select new RequestDTO
+    myRequests = (from r in reqs
+                  join o in objs on r.KodObject equals o.Id
+                  select new RequestDTO
                 {
                   Num = r.Num,
                   Data = r.Data,
@@ -101,64 +97,68 @@
                 .OrderBy(o => o.Num)
                 .AsEnumerable();
 
+    isLoading = false;
+  }
 
-   //countRequests = myRequests.Count();
+  void OnAddNewClick()
+  {
+    nav.NavigateTo("/requests/new", true);
+  }
 
-   isLoading = false;
+  void OnEditClick()
+  {
+    if (User?.IsInRole("Administrator") == true)
+    {
+      nav.NavigateTo($"/requests/edit/{selected[0].Id}", true);
+    }
+  }
 
- }
+  void OnDeleteClick()
+  {
+    if (User?.IsInRole("Administrator") == true)
+    {
+      Delete(selected[0].Id);
+    }
+  }
 
- void OnAddNewClick()
- {
-   nav.NavigateTo("/requests/new", true);
- }
+  bool isSelected()
+  {
+    return !(selected?.Any() == true);
+  }
 
- void Submit(RequestDTO arg)
- {
-   //console.Log(arg);
- }
+  void Delete(long? num)
+  {
+    if (!num.HasValue)
+      return;
 
- void DeleteRequest(long? num)
- {
-   if (!num.HasValue)
-     return;
+    if(num!=null)
+      grpcClient.DeleteRequest(num??-1) ;
 
-   /*Request? req = db1context.Requests.FirstOrDefault(r => r.Num == num);
-   if (req != null)
-   {
-     db1context.Requests.Remove(req);
-     db1context.SaveChanges();
-   }
-*/
-   if(num!=null)
-     grpcClient.DeleteRequest(num??-1) ;
+    nav.NavigateTo("/requests", true);
+  }
 
-   nav.NavigateTo("/requests", true);
- }
+  void OnCellContextMenu(DataGridCellMouseEventArgs<RequestDTO> args)
+  {
+    selected = new List<RequestDTO>() { args.Data };
 
+    ContextMenuService.Open(args,
+        new List<ContextMenuItem> {
+              new ContextMenuItem(){ Text = "Редактировать", Value = 1 },
+              new ContextMenuItem(){ Text = "Удалить", Value = 2 },
+          }, 
+          (e) => { 
+            switch (e.Value)
+            {
+              case 1:
+                nav.NavigateTo($"/requests/edit/{args.Data.Id}", true);
+                break;
+              case 2:
+                Delete(args.Data.Id);
+                break;
+            }
 
- void OnCellContextMenu(DataGridCellMouseEventArgs<RequestDTO> args)
- {
-   selectedRequest = new List<RequestDTO>() { args.Data };
-
-   ContextMenuService.Open(args,
-       new List<ContextMenuItem> {
-             new ContextMenuItem(){ Text = "Редактировать", Value = 1 },
-             new ContextMenuItem(){ Text = "Удалить", Value = 2 },
-         }, 
-         (e) => { 
-           switch (e.Value)
-           {
-             case 1:
-               nav.NavigateTo($"/requests/edit/{args.Data.Id}", true);
-               break;
-             case 2:
-               DeleteRequest(args.Data.Id);
-               break;
-           }
-
-           //console.Log($"e: {e.Value}. args: {args.Data.Num}."); 
-         }
-       );
-   }
+            //console.Log($"e: {e.Value}. args: {args.Data.Num}."); 
+          }
+        );
+  }
 }

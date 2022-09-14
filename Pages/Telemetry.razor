@@ -1,140 +1,234 @@
-@page "/telemetry/{Id:long}/{DateTStr}/{DateTEtr}/{War4:int}/{ObjKod:int}"
+@page "/telemetry"
 
 @using System.Linq.Dynamic.Core
-@using SecondVariety.Models;
 @using Microsoft.EntityFrameworkCore
+@using SecondVariety.Models
+@using Object = SecondVariety.Models.Object
 
 @inject NavigationManager nav
 @inject GrpcClientService grpcClient
+@inject NotificationService NotificationService
 
+  <h1>Рассчёт телеметрии по объекту</h1>
 
-<h1>@HeaderStr</h1>
-<div class="row gap-3">
-    <RadzenChart>
-          <RadzenLegend Position="LegendPosition.Top" />
-        <RadzenLineSeries Smooth="true" Data="@Telemetries" CategoryProperty="Period" Title="@TeleMetr1Title"
-            ValueProperty="Value" RenderingOrder="1">
-            <RadzenSeriesTrendLine Visible="true" Stroke="red" LineType="LineType.Solid" />
-        </RadzenLineSeries>
-        <RadzenCategoryAxis Padding="20" Formatter="@FormatAsTime" />
-        <RadzenValueAxis Formatter="@FormatAsVal">
-            <RadzenGridLines Visible="true" />
-            <RadzenAxisTitle Text="Значение" />
-        </RadzenValueAxis>
+  <div class="row gap-3">
+    <div class="col">
+      <RadzenFieldset Text="Действия" class="gap-3">
+        <RadzenButton Click=@ShowChart Text="Выполнить анализ" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
+      </RadzenFieldset>
+    </div>
+  </div>
+
+  <div class="row gap-3">
+    <RadzenDropDownDataGrid Name="Object" TValue="int" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" 
+        AllowFiltering="true"
+        AllowClear="true"
+        Data=@objects
+        AllowColumnResize="true"
+        Count="@count"
+        Change="@OnChange"
+        TextProperty="Name"
+        ValueProperty="Id"
+        PageSize="10"
+        AllowFilteringByAllStringColumns="true">
+      <Columns>
+        <RadzenDropDownDataGridColumn Property="Kod" Title="Код" />
+        <RadzenDropDownDataGridColumn Property="Name" Title="Имя" />
+      </Columns>
+    </RadzenDropDownDataGrid>
+    <RadzenRequiredValidator Component="Object" Text="Выбор объекта для формирования графика телеметрии является обязательным" />
+  </div>
+
+  <div class="row gap-3">
+    <RadzenChart Visible="@WarVisible">
+      <RadzenLegend Position="LegendPosition.Top" />
+      <RadzenLineSeries Smooth="true" Data="@Telemetries" CategoryProperty="Period" Title="@TeleMetr1Title" ValueProperty="Value" RenderingOrder="1">
+        <RadzenSeriesTrendLine Visible="true" Stroke="red" LineType="LineType.Solid" />
+      </RadzenLineSeries>
+      <RadzenCategoryAxis Padding="20" Formatter="@FormatAsTime" />
+      <RadzenValueAxis Formatter="@FormatAsVal">
+        <RadzenGridLines Visible="true" />
+        <RadzenAxisTitle Text="Значение" />
+      </RadzenValueAxis>
     </RadzenChart>
-</div>
+  </div>
 
-<div class="row gap-4">
+  <div class="row gap-3">
     <RadzenChart Visible="@War4Visible">        
-        <RadzenLegend Position="LegendPosition.Top" />
-        <RadzenLineSeries Smooth="true" Data="@Telemetries1" CategoryProperty="Period" Title="@TeleMetr2Title"
-            ValueProperty="Value" RenderingOrder="1">
-            <RadzenSeriesTrendLine Visible="true" Stroke="red" LineType="LineType.Solid" />
-        </RadzenLineSeries>
-        <RadzenCategoryAxis Padding="20" Formatter="@FormatAsTime" />
-        <RadzenValueAxis Formatter="@FormatAsVal">
-            <RadzenGridLines Visible="true" />
-            <RadzenAxisTitle Text="Значение" />
-        </RadzenValueAxis>
+      <RadzenLegend Position="LegendPosition.Top" />
+      <RadzenLineSeries Smooth="true" Data="@Telemetries1" CategoryProperty="Period" Title="@TeleMetr2Title" ValueProperty="Value" RenderingOrder="1">
+        <RadzenSeriesTrendLine Visible="true" Stroke="red" LineType="LineType.Solid" />
+      </RadzenLineSeries>
+      <RadzenCategoryAxis Padding="20" Formatter="@FormatAsTime" />
+      <RadzenValueAxis Formatter="@FormatAsVal">
+        <RadzenGridLines Visible="true" />
+        <RadzenAxisTitle Text="Значение" />
+      </RadzenValueAxis>
     </RadzenChart>
-</div>
+  </div>
 
 @code {
-    [Parameter] public long Id { get; set; }
-    [Parameter] public string DateTStr { get; set; }
-    [Parameter] public string DateTEtr { get; set; }
-    [Parameter] public int War4 { get; set; }
-    [Parameter] public int ObjKod { get; set; }
-    public DateTime DateT { get; set; }
-    public string HeaderStr {get;set;}
-    public string TeleMetr1Title {get;set ;}
+  //[Parameter] public long Id { get; set; }
+  //[Parameter] public string DateTStr { get; set; }
+  //[Parameter] public string DateTEtr { get; set; }
+  //[Parameter] public int War4 { get; set; }
+  //[Parameter] public int ObjKod { get; set; }
+  private IEnumerable<Object> objects = Enumerable.Empty<Object>();
+  private int count;
+  private Object? selected;
 
-    public bool War4Visible {get;set;} = false ;
+  public DateTime DateT { get; set; }
+  public string HeaderStr {get;set;}
+  public string TeleMetr1Title {get;set ;}
 
-    public string TeleMetr2Title {get;set ;}
-    List<Models.Telemetry> Telemetries  {get;set;} = new List<Models.Telemetry>() ;
-    List<Models.Telemetry> Telemetries1 {get;set;} = new List<Models.Telemetry>() ;   
-    protected override async Task OnInitializedAsync()
+  public bool War4Visible {get;set;} = false ;
+  public bool WarVisible { get; set; } = false;
+
+  public string TeleMetr2Title {get;set ;}
+
+  List<Models.Telemetry> Telemetries  {get;set;} = new List<Models.Telemetry>();
+  List<Models.Telemetry> Telemetries1 {get;set;} = new List<Models.Telemetry>();
+
+  protected override async Task OnInitializedAsync()
+  {
+    var objs = grpcClient.GetObjects();
+    objects = objs.OrderBy(o => o.Kod);
+    count = objects.Count();
+  }
+
+  void OnChange(object args)
+  {
+    if (args is int)
     {
-        Telemetries = new List<Models.Telemetry>();
-        Telemetries1 = new List<Models.Telemetry>();
-        var startDate = DateTimeFromBase64(DateTStr) ;
-        var endDate = DateTimeFromBase64(DateTEtr) ;
-        War4Visible = false ;
-        if(ObjKod < 0 ) return ;
-         
-        try
+      int id = Convert.ToInt32(args);
+      var message = new NotificationMessage
         {
-            if(War4 == 0 )
-            {
-               var tt = grpcClient.GetTelemetryServPeriodByObjKod(startDate,endDate,ObjKod);
-   
-               if (tt != null && tt.Count() > 0)
-               {
-                   HeaderStr = $"Телеметрия c {startDate.ToShortDateString()} {startDate.ToShortTimeString()} по {endDate.ToShortDateString()} {endDate.ToShortTimeString()} для объекта №{ObjKod}" ;
-                   TeleMetr1Title = HeaderStr ;
-                   Telemetries.AddRange(tt.OrderBy(ttt => ttt.Period)) ;
-                    Telemetries1.Add(new Models.Telemetry { Period = DateTime.Now , Value = 0 }) ;
-                   return;
-               }
-            }
-        }
-        catch { }
+          Severity = NotificationSeverity.Info,
+          Summary = "Выбран",
+          Detail = String.Format("объект с ID {0}", id),
+          Duration = 4000
+        };
 
-        try
+      NotificationService.Notify(message);
+      selected = objects.FirstOrDefault(o => o.Id == id);
+    }
+  }
+
+  void ShowChart()
+  {
+    DateTime startDate;
+    DateTime endDate;
+    bool warning4 = false;
+
+    if (selected == null || selected.Kod < 0)
+    {
+      return;
+    }
+
+    if (selected.WarningType.HasValue && selected.WarningType.Value > 0)
+    {
+      startDate = selected.WarningTime ?? DateTime.Now;
+      endDate = startDate.AddMinutes(61);
+      warning4 = (selected.WarningType == 4);
+    }
+    else
+    {
+      startDate = DateTime.Now;
+      endDate = startDate.AddHours(2);
+    }
+
+    Telemetries = new List<Models.Telemetry>();
+    Telemetries1 = new List<Models.Telemetry>();
+
+    War4Visible = false;
+
+    try
+    {
+      if (!warning4)
+      {
+        var tt = grpcClient.GetTelemetryServPeriodByObjKod(startDate, endDate, selected.Kod);
+
+        if (tt != null && tt.Count() > 0)
         {
-            if(War4 == 1 )
-            {
-               var tt = grpcClient.GetWarning4(startDate,endDate,ObjKod);
-   
-               if (tt.Item1 != null && tt.Item1.Count() > 0 && tt.Item2 != null && tt.Item2.Count() > 0)
-               {
-                   HeaderStr = $"Телеметрия c {startDate.ToShortDateString()} {startDate.ToShortTimeString()} по {endDate.ToShortDateString()} {endDate.ToShortTimeString()} для объекта №{ObjKod} Type1" ;
-                   TeleMetr1Title = HeaderStr ;
-
-                   Telemetries.AddRange(tt.Item1.OrderBy(ttt => ttt.Period)) ;
-                   Telemetries1.AddRange(tt.Item2.OrderBy(ttt => ttt.Period)) ;
-                   TeleMetr2Title = "Телеметрия Type2" ;
-                   War4Visible = true ; 
-                   return;
-               }
-            }
+          HeaderStr = $"Телеметрия c {startDate.ToShortDateString()} {startDate.ToShortTimeString()} по {endDate.ToShortDateString()} {endDate.ToShortTimeString()} для объекта №{selected.Kod}";
+          TeleMetr1Title = HeaderStr;
+          Telemetries.AddRange(tt.OrderBy(ttt => ttt.Period));
+          Telemetries1.Add(new Models.Telemetry { Period = DateTime.Now, Value = 0 });
+          WarVisible = true;
+          return;
         }
-        catch { }
-
-        Telemetries1.Add(new Models.Telemetry { Period = DateTime.Now , Value = 0 }) ;
-        Telemetries.Add(new Models.Telemetry { Period = DateTime.Now , Value = 0 }) ;
-        HeaderStr = $"Нет данных телеметрии для объекта №{ObjKod}" ; 
-        TeleMetr1Title = HeaderStr ;   
-       
+      }
     }
+    catch { }
 
-    DateTime DateTimeFromBase64(string strBased)
+    try
     {
-        var dbytes = System.Convert.FromBase64String(strBased);
-        var dstr = System.Text.Encoding.UTF8.GetString(dbytes);
-        return DateTime.Parse(dstr);
-    }
-    string GetDate()
-    {
-        return DateT.ToShortDateString();
-    }
+      if (warning4)
+      {
+        var tt = grpcClient.GetWarning4(startDate, endDate, selected.Kod);
 
-    string FormatAsTime(object value)
-    {
-        if (value is DateTime)
+        if (tt.Item1 != null && tt.Item1.Count() > 0 && tt.Item2 != null && tt.Item2.Count() > 0)
         {
-            return ((DateTime)(value)).ToShortTimeString();
+          HeaderStr = $"Телеметрия c {startDate.ToShortDateString()} {startDate.ToShortTimeString()} по {endDate.ToShortDateString()} {endDate.ToShortTimeString()} для объекта №{selected.Kod} Type1";
+          TeleMetr1Title = HeaderStr;
+
+          Telemetries.AddRange(tt.Item1.OrderBy(ttt => ttt.Period));
+          Telemetries1.AddRange(tt.Item2.OrderBy(ttt => ttt.Period));
+          TeleMetr2Title = "Телеметрия Type2";
+          War4Visible = true;
+          return;
         }
-        return "";
+      }
     }
 
-    string FormatAsVal(object value)
-    {
-        if (value is float)
-        {
-            return $"{value}";
-        }
-        return "";
-    }
+    catch { }
+
+    Telemetries1.Add(new Models.Telemetry { Period = DateTime.Now, Value = 0 });
+    Telemetries.Add(new Models.Telemetry { Period = DateTime.Now, Value = 0 });
+    HeaderStr = $"Нет данных телеметрии для объекта №{selected.Kod}";
+    TeleMetr1Title = HeaderStr;
+
+  }
+
+  bool isSelected()
+  {
+    return selected != null;
+  }
+
+  string DateTimeToBase64(DateTime dt)
+  {
+    var dbytes = System.Text.Encoding.UTF8.GetBytes(dt.ToString());
+    var dbased = Convert.ToBase64String(dbytes);
+    return dbased;
+  }
+
+  DateTime DateTimeFromBase64(string strBased)
+  {
+      var dbytes = System.Convert.FromBase64String(strBased);
+      var dstr = System.Text.Encoding.UTF8.GetString(dbytes);
+      return DateTime.Parse(dstr);
+  }
+
+  string GetDate()
+  {
+      return DateT.ToShortDateString();
+  }
+
+  string FormatAsTime(object value)
+  {
+      if (value is DateTime)
+      {
+          return ((DateTime)(value)).ToShortTimeString();
+      }
+      return "";
+  }
+
+  string FormatAsVal(object value)
+  {
+      if (value is float)
+      {
+          return $"{value}";
+      }
+      return "";
+  }
 }

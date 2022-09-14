@@ -268,7 +268,10 @@ namespace SecondVariety
       {
         await telemetryclient.TrainingObjAsync(new GObjectId { Id = obkKod }, GetMetadata());
       }
-      catch { }
+      catch 
+      {
+        
+      }
     }
 
     public IEnumerable<Models.Telemetry> GetTelemetryServPeriod(DateTime start, DateTime end)

@@ -3,20 +3,24 @@
 @using System.Linq.Dynamic.Core
 @using SecondVariety.Models;
 @using System.Linq;
+@using Object = SecondVariety.Models.Object;
+
 @inject NavigationManager nav
 @inject ContextMenuService ContextMenuService
 @inject GrpcClientService grpcClient 
 
   <h1>Объекты</h1>
-    <AuthorizeView Roles="Administrator">
-     <div class="row gap-3">
-       <div class="col">
-         <RadzenFieldset Text="Действия" class="gap-3">
-           <RadzenButton Click=@OnAddNewClick Text="Создать" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
-         </RadzenFieldset>
-       </div>
-     </div>
-    </AuthorizeView>
+  <AuthorizeView Roles="Administrator">
+    <div class="row gap-3">
+      <div class="col">
+        <RadzenFieldset Text="Действия" class="gap-3">
+          <RadzenButton Click=@OnAddNewClick Text="Создать" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
+          <RadzenButton Click=@OnEditClick Text="Редактировать" Disabled=@isSelected() Icon="save" ButtonStyle="ButtonStyle.Secondary" />
+          <RadzenButton Click=@OnDeleteClick Text="Удалить" Disabled=@isSelected() Icon="report" ButtonStyle="ButtonStyle.Danger" />
+        </RadzenFieldset>
+      </div>
+    </div>
+  </AuthorizeView>
       
   <div class="row gap-3">    
     <RadzenDataGrid
@@ -28,12 +32,17 @@
         AllowColumnPicking="true"
         ShowPagingSummary="true"
         PageSize="10"
+        EmptyText="Нет данных по объектам"
+        AllColumnsText="Все колонки"
+        ColumnsShowingText="Колонок"
+        DoesNotContainText="Нет данных по объектам"
+        PagingSummaryFormat="Страница {0} из {1}"
         PagerHorizontalAlign="HorizontalAlign.Center"
         TItem="SecondVariety.Models.Object"
         SelectionMode="DataGridSelectionMode.Single" 
         @bind-Value=@selected
         CellContextMenu="@OnCellContextMenu"
-    >
+        >
         <Columns>
             <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="Kod" Title="Код" Width="25px" TextAlign="TextAlign.Center" />
             <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="Name" Title="Наименование" Width="75px" />
@@ -45,13 +54,13 @@
             <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="TekNar" Title="Текущая наработка" Width="55px" />
             <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="SredNar" Title="Среднедневная наработка" Width="70px" />
             <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="WarningType" Title="Предупреждение" Width="75px" >
-                <Template Context="cont">
-                  <div style="background-color:@GetColor(cont.WarningType)">
-                   <span>@cont.WarningType </span>
-                  </div>
-                </Template>
+              <Template Context="cont">
+                <div style="background-color:@GetColor(cont.WarningType)">
+                  <RadzenIcon Icon=@GetIcon(cont.WarningType) />
+                </div>
+              </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn  TItem="SecondVariety.Models.Object" Property="WarningTime" FormatString="{0:d}" Title="Время предупреждения" Width="70px" />
+      <RadzenDataGridColumn TItem="Object" Property="WarningTime" FormatString="{0:d}" Title="Время предупреждения" Width="70px" />
         </Columns>
     </RadzenDataGrid>
   </div>
@@ -66,8 +75,8 @@
   private Task<AuthenticationState> authenticationStateTask { get; set; }
   private System.Security.Claims.ClaimsPrincipal? User ;
   //RadzenDataGrid<SecondVariety.Models.Object> grid;
-  private IEnumerable<SecondVariety.Models.Object> objects;
-  IList<SecondVariety.Models.Object> selected;
+  private IEnumerable<Object> objects;
+  IList<Object> selected;
   private bool isLoading = false;
   private int count;
   //EventConsole console;
@@ -87,7 +96,7 @@
     {
       return;
     }
-     var objs = grpcClient.GetObjects() ;
+    var objs = grpcClient.GetObjects() ;
     objects = objs.OrderBy(o => o.Kod) ;
     //.OrderBy(o => o.Kod); //db1context.Objects.OrderBy(o => o.Kod).AsQueryable();
     count = objects.Count();
@@ -96,63 +105,90 @@
 
   void OnAddNewClick()
   {
-    if(User.IsInRole("Administrator"))
+    if(User?.IsInRole("Administrator") == true)
     {
       nav.NavigateTo("/objects/new", true);
     }
   }
 
+  void OnEditClick()
+  {
+    if (User?.IsInRole("Administrator") == true)
+    {
+      nav.NavigateTo($"/objects/edit/{selected[0].Id}", true);
+    }
+  }
+
+  void OnDeleteClick()
+  {
+    if (User?.IsInRole("Administrator") == true)
+    {
+      DeleteObject(selected[0].Id);
+    }
+  }
+
   string GetColor(int? wt)
   {
-      if(wt==null) return "white" ;
-      switch(wt)
-      {
-        case 0:
-            return "#96f480" ;
-            
-        case 1:
-            return "#d5e969" ; 
-        
-        case 2:
-            return "#f49f58" ;
-          
-        case 3:
-            return "#f18989" ;
-          
-        case 4:
-           return "#ed3636" ;
-           
-      }
-      return "red";
+    if(wt==null) return "white" ;
+    switch(wt)
+    {
+      case 0:
+        return "#96f480" ;
+
+      case 1:
+        return "#d5e969" ; 
+
+      case 2:
+        return "#f49f58" ;
+
+      case 3:
+        return "#f18989" ;
+
+      case 4:
+        return "#ed3636" ;
+
+    }
+    return "red";
+  }
+
+  string GetIcon(int? wt)
+  {
+    if (wt == null) return "check_circle";
+    switch (wt)
+    {
+      case 0:
+        return "check_circle";
+
+      case 1:
+        return "refresh";
+
+      case 2:
+        return "privacy_tip";
+
+      case 3:
+        return "warning_amber";
+
+      case 4:
+        return "report";
+
+    }
+    return "report";
+  }
+
+  bool isSelected()
+  {
+    return !(selected?.Any() == true);
   }
 
   void OnCellContextMenu(DataGridCellMouseEventArgs<SecondVariety.Models.Object> args)
   {
     selected = new List<SecondVariety.Models.Object>() { args.Data };
-    if(User.IsInRole("Administrator"))
+    if(User?.IsInRole("Administrator") == true)
     {
-     DateTime sdtime ;
-     DateTime edtime ;
-     bool warning4 = false ;
-
-     if(args.Data.WarningType!=null && args.Data.WarningType>0) 
-     {
-         sdtime = args.Data.WarningTime??DateTime.Now;
-         edtime = sdtime.AddMinutes(61);
-         warning4 = (args.Data.WarningType == 4);
-     }
-     else
-     {
-        sdtime = DateTime.Now ;
-        edtime =sdtime.AddHours(2) ;
-     }
-
-     var startBased = DateTimeToBase64(sdtime) ;
-     var endBased = DateTimeToBase64(edtime) ;
 
     ContextMenuService.Open(args,
         new List<ContextMenuItem> {
-              new ContextMenuItem(){ Text = "Телеметрия", Value = 1 },             
+              //new ContextMenuItem(){ Text = "Телеметрия", Value = 1 },             
               new ContextMenuItem(){ Text = "Редактировать", Value = 2 },
               new ContextMenuItem(){ Text = "Удалить", Value = 3 },
               new ContextMenuItem(){ Text = "Обучить", Value = 4 },
@@ -162,7 +198,7 @@
             switch (e.Value)
             {
               case 1:
-                nav.NavigateTo($"/telemetry/{args.Data.Kod}/{startBased}/{endBased}/{(warning4?1:0)}/{args.Data.Kod}", true);
+                //nav.NavigateTo($"/telemetry/{args.Data.Kod}/{startBased}/{endBased}/{(warning4?1:0)}/{args.Data.Kod}", true);
                 ContextMenuService.Close() ;
                 break ;
               case 2:
@@ -174,7 +210,7 @@
                 ContextMenuService.Close() ;
                 break;
               case 4:
-                grpcClient.TelemetryTrainingObj(args.Data.Kod) ;
+                
                  ContextMenuService.Close() ;
                 break ;
               case 5:                
@@ -190,23 +226,8 @@
      }
   }
 
-  string DateTimeToBase64(DateTime dt)
-  {
-     var dbytes = System.Text.Encoding.UTF8.GetBytes(dt.ToString()) ;
-     var dbased = Convert.ToBase64String(dbytes); 
-     return dbased ;
-  }
   void DeleteObject(int Id)
   {
-  /*  SecondVariety.Models.Object? myObj = db1context.Objects.FirstOrDefault(r => r.Kod == kod);
-    if (myObj != null)
-    {
-      db1context.Objects.Remove(myObj);
-      db1context.SaveChanges();
-    }
-*/  
     grpcClient.DeleteObject(Id);
-   
-    
   }
 }

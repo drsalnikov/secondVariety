@@ -1,0 +1,138 @@
+﻿@page "/settings"
+
+@using System.Linq.Dynamic.Core
+@using SecondVariety.Models;
+@using System.Linq;
+@inject NavigationManager nav
+@inject ContextMenuService ContextMenuService
+@inject GrpcClientService grpcClient 
+
+  <h1>Настройки</h1>
+  <AuthorizeView Roles="Administrator">
+    <div class="row gap-3">
+      <div class="col">
+        <RadzenFieldset Text="Действия" class="gap-3">
+          <RadzenButton Click=@TraningAll Text="Обучить все объекты" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
+          <RadzenButton Click=@CheckAll Text="Проверка всех объектов" Icon="save" ButtonStyle="ButtonStyle.Secondary" />
+        </RadzenFieldset>
+      </div>
+    </div>
+  </AuthorizeView>
+      
+@code {
+  [CascadingParameter]
+  private Task<AuthenticationState> authenticationStateTask { get; set; }
+  private System.Security.Claims.ClaimsPrincipal? User ;
+  //RadzenDataGrid<SecondVariety.Models.Object> grid;
+  private IEnumerable<SecondVariety.Models.Object> objects;
+  IList<SecondVariety.Models.Object> selected;
+  private bool isLoading = false;
+  private int count;
+  //EventConsole console;
+
+  protected override async Task OnInitializedAsync()
+  {
+    await base.OnInitializedAsync();
+    await LoadData();
+  }
+
+  async Task LoadData()
+  {
+    isLoading = true;
+    User = (await authenticationStateTask).User;
+    if(!User.IsInRole("Administrator")&&!User.IsInRole("Manager")&&!User.IsInRole("Worker"))
+    {
+      return;
+    }
+    //var objs = grpcClient.GetObjects() ;
+    //objects = objs.OrderBy(o => o.Kod) ;
+    //.OrderBy(o => o.Kod); //db1context.Objects.OrderBy(o => o.Kod).AsQueryable();
+    //count = objects.Count();
+    isLoading = false;
+  }
+
+  void TraningAll()
+  {
+    //grpcClient.TelemetryTrainingObj(args.Data.Kod);
+  }
+
+  void CheckAll()
+  {
+
+  }
+
+  void OnCellContextMenu(DataGridCellMouseEventArgs<SecondVariety.Models.Object> args)
+  {
+    selected = new List<SecondVariety.Models.Object>() { args.Data };
+    if(User.IsInRole("Administrator"))
+    {
+     DateTime sdtime ;
+     DateTime edtime ;
+     bool warning4 = false ;
+
+     if(args.Data.WarningType != null && args.Data.WarningType > 0) 
+     {
+         sdtime = args.Data.WarningTime??DateTime.Now;
+         edtime = sdtime.AddMinutes(61);
+         warning4 = (args.Data.WarningType == 4);
+     }
+     else
+     {
+        sdtime = DateTime.Now ;
+        edtime =sdtime.AddHours(2) ;
+     }
+
+     var startBased = DateTimeToBase64(sdtime) ;
+     var endBased = DateTimeToBase64(edtime) ;
+
+      ContextMenuService.Open(args,
+        new List<ContextMenuItem> {
+              new ContextMenuItem(){ Text = "Телеметрия", Value = 1 },             
+              new ContextMenuItem(){ Text = "Редактировать", Value = 2 },
+              new ContextMenuItem(){ Text = "Удалить", Value = 3 },
+              new ContextMenuItem(){ Text = "Обучить", Value = 4 },
+              new ContextMenuItem(){ Text = "Проверить обучение", Value = 5 }
+          }, 
+          (e) => { 
+            switch (e.Value)
+            {
+              case 1:
+                nav.NavigateTo($"/telemetry/{args.Data.Kod}/{startBased}/{endBased}/{(warning4?1:0)}/{args.Data.Kod}", true);
+                ContextMenuService.Close() ;
+                break ;
+              case 2:
+                nav.NavigateTo($"/objects/edit/{args.Data.Id}", true);
+                ContextMenuService.Close() ;
+                break;
+              case 3:
+                DeleteObject(args.Data.Id);
+                ContextMenuService.Close() ;
+                break;
+              case 4:
+                grpcClient.TelemetryTrainingObj(args.Data.Kod) ;
+                 ContextMenuService.Close() ;
+                break ;
+              case 5:                
+                grpcClient.CheckingTrainingObj(args.Data.Kod) ;
+                 ContextMenuService.Close() ;
+                break;  
+
+            }
+
+            //console.Log($"e: {e.Value}. args: {args.Data.Num}."); 
+          }
+        );
+     }
+  }
+
+  string DateTimeToBase64(DateTime dt)
+  {
+     var dbytes = System.Text.Encoding.UTF8.GetBytes(dt.ToString()) ;
+     var dbased = Convert.ToBase64String(dbytes); 
+     return dbased ;
+  }
+  void DeleteObject(int Id)
+  {
+    grpcClient.DeleteObject(Id);
+  }
+}

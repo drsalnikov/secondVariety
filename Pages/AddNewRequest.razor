@@ -95,12 +95,10 @@
     </div>
   </RadzenTemplateForm>
 
-
-<EventConsole @ref=@console Class="mt-4" />
-
 @code {
   [CascadingParameter]
   private Task<AuthenticationState> authenticationStateTask { get; set; }
+
   private System.Security.Claims.ClaimsPrincipal? User ;
   private Request newRequest = new Request();
   private IEnumerable<SecondVariety.Models.Object> objects = Enumerable.Empty<SecondVariety.Models.Object>();
@@ -123,6 +121,7 @@
       newRequest.KodObject = args as int?;  
     }
   }
+
   void OnStatusChange(object args)
   {
     if (args is Models.StatusTypes)
@@ -130,41 +129,49 @@
       newRequest.Status = (int)args;  
     }
   }
+
   void Cancel()
   {
-      nav.NavigateTo("/requests", true);
+    nav.NavigateTo("/requests", true);
   }
 
   async Task LoadData()
   {
-     /* objects = db1context.Objects.OrderBy(o => o.Kod).AsQueryable();
-      count = objects.Count();
-      var lastnumbers = db1context.Requests.Select(r => r.Num).OrderBy(r => r).ToList();*/
-      //lastnumber = lastnumbers.LastOrDefault() + 1;
+    /*
+       objects = db1context.Objects.OrderBy(o => o.Kod).AsQueryable();
+       count = objects.Count();
+       var lastnumbers = db1context.Requests.Select(r => r.Num).OrderBy(r => r).ToList();
+       lastnumber = lastnumbers.LastOrDefault() + 1;
+    */
 
     User = (await authenticationStateTask).User;
-     if(!User.IsInRole("Administrator")&&!User.IsInRole("Manager"))
-       return ;
 
-     var objs = grpcClient.GetObjects() ;
-     objects = objs.OrderBy(o => o.Kod) ;
-     count = objects.Count();
+    if(!User.IsInRole("Administrator")&&!User.IsInRole("Manager"))
+    {
+      return;
+    }
+
+    var objs = grpcClient.GetObjects() ;
+    objects = objs.OrderBy(o => o.Kod) ;
+    count = objects.Count();
      
-     var reqs = grpcClient.GetRequests() ;
-     var lastnumbers = reqs.Select(r => r.Num).OrderBy(r => r).ToList();
-     lastnumber = lastnumbers.LastOrDefault() + 1;
+    var reqs = grpcClient.GetRequests() ;
+    var lastnumbers = reqs.Select(r => r.Num).OrderBy(r => r).ToList();
+    lastnumber = lastnumbers.LastOrDefault() + 1;
 
-     await InvokeAsync(StateHasChanged);
+    await InvokeAsync(StateHasChanged);
   }
 
   void OnSubmit(Request arg)
   {
-      arg.Num = lastnumber;
-    /*  db1context.Requests.Add(arg);
-      db1context.SaveChanges();
-      */
-      grpcClient.AddRequest(arg);
-     // nav.NavigateTo($"/objects/{arg.KodObject}", true);
-      nav.NavigateTo($"/objects/edit/{arg.KodObject}", true);
+    arg.Num = lastnumber;
+    /*  
+        db1context.Requests.Add(arg);
+        db1context.SaveChanges();
+        nav.NavigateTo($"/objects/{arg.KodObject}", true);
+    */
+
+    grpcClient.AddRequest(arg);
+    nav.NavigateTo($"/objects/edit/{arg.KodObject}", true);
   }
 }

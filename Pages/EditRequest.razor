@@ -97,12 +97,11 @@
     </div>
   </RadzenTemplateForm>
 
-<EventConsole @ref=@console Class="mt-4" />
-
 @code {
   [Parameter]
   public long Id { get; set; }
-   [CascadingParameter]
+
+  [CascadingParameter]
   private Task<AuthenticationState> authenticationStateTask { get; set; }
   private System.Security.Claims.ClaimsPrincipal? User ;
   private string? objectValue;
@@ -154,7 +153,6 @@
     }
   }
 
-
   void OnChange(object args)
   {
     if (args is int)
@@ -162,7 +160,6 @@
       newRequest.KodObject = (int)args;
     }
   }
-
 
   void Cancel()
   {

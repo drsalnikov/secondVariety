@@ -100,8 +100,6 @@
     </div>
   </RadzenTemplateForm>
 
-<EventConsole @ref=@console Class="mt-4" />
-
 @code {
   //RadzenDataGrid<Narabotka> narabotkiGrid;
   //int lastKod;
@@ -126,9 +124,10 @@
        return ;
 
     myObj = new SecondVariety.Models.Object();
- /*   IEnumerable<int> lastkods = db1context.Objects.Select(r => r.Kod).OrderBy(r => r).AsEnumerable();
-    myObj.Kod = lastkods.Any() ? lastkods.LastOrDefault() + 1 : 1;
-*/
+    /*  IEnumerable<int> lastkods = db1context.Objects.Select(r => r.Kod).OrderBy(r => r).AsEnumerable();
+        myObj.Kod = lastkods.Any() ? lastkods.LastOrDefault() + 1 : 1;
+    */
+
     var objs = grpcClient.GetObjects() ;
     IEnumerable<int> lastkods = objs.Select(r => r.Kod).OrderBy(r => r).AsEnumerable();
     myObj.Kod = lastkods.Any() ? lastkods.LastOrDefault() + 1 : 1;

@@ -20,7 +20,6 @@ namespace SecondVariety.Models
       //  public virtual Object? KodObjectNavigation { get; set; }
     }
 
-
     public partial class RequestDTO
     {
       public int? Num { get; set; }

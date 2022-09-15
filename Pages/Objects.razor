@@ -161,12 +161,32 @@
   void OnCellContextMenu(DataGridCellMouseEventArgs<SecondVariety.Models.Object> args)
   {
     selected = new List<SecondVariety.Models.Object>() { args.Data };
+    DateTime sdtime ;
+    DateTime edtime ;
+    bool warning4 = false ;
+
+    if(args.Data.WarningType!=null && args.Data.WarningType>0) 
+     {
+         sdtime = args.Data.WarningTime??DateTime.Now;
+         edtime = sdtime.AddMinutes(args.Data.ErrorPeriod??61);
+         warning4 = (args.Data.WarningType == 4);
+     }
+     else
+     {
+        sdtime = DateTime.Now ;
+        edtime =sdtime.AddHours(2) ;
+     }
+
+     var startBased = DateTimeToBase64(sdtime) ;
+     var endBased = DateTimeToBase64(edtime) ;
+
+
     if(User?.IsInRole("Administrator") == true)
     {
 
       ContextMenuService.Open(args,
           new List<ContextMenuItem> {
-              //new ContextMenuItem(){ Text = "Телеметрия", Value = 1 },             
+              new ContextMenuItem(){ Text = "Телеметрия", Value = 1 },             
               new ContextMenuItem(){ Text = "Редактировать", Value = 2 },
               new ContextMenuItem(){ Text = "Удалить", Value = 3 },
               //new ContextMenuItem(){ Text = "Обучить", Value = 4 },
@@ -176,7 +196,7 @@
               switch (e.Value)
               {
                 case 1:
-                  //nav.NavigateTo($"/telemetry/{args.Data.Kod}/{startBased}/{endBased}/{(warning4?1:0)}/{args.Data.Kod}", false);
+                  nav.NavigateTo($"/telemetrycalc/{args.Data.Kod}/{startBased}/{endBased}/{(warning4?1:0)}/{args.Data.Kod}", false);
                   ContextMenuService.Close() ;
                   break ;
                 case 2:
@@ -234,5 +254,12 @@
       NotificationService.Notify(message);
     }
     
+  }
+
+  string DateTimeToBase64(DateTime dt)
+  {
+     var dbytes = System.Text.Encoding.UTF8.GetBytes(dt.ToString()) ;
+     var dbased = Convert.ToBase64String(dbytes); 
+     return dbased ;
   }
 }

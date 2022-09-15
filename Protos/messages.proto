@@ -30,7 +30,8 @@ message GObject {
     google.protobuf.Timestamp WarningFrom = 21 ;
     int32 WarningSensor = 22 ;
     float ErrorRate = 23 ;
-    bool HasValue = 24 ;
+    int32 ErrorPeriod = 24;
+    bool HasValue = 25 ;
 }
 
 message GObjectId {
@@ -118,6 +119,17 @@ message GTelemetryTwoTypes
 message GClaim
 {
     string Uri = 1;
+}
+
+message GWitsml
+{
+    bytes Data = 1;
+}
+
+message GUploadCount
+{
+    int64 Count =1 ;
+    int64 TimeTotal = 2;
 }
 
 message GGetTokenClaims

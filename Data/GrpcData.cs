@@ -31,7 +31,20 @@ namespace SecondVariety
 
       return objs;
     }
+    public async Task<IEnumerable<Models.Object>> GetObjectsAsync()
+    {
+      using var channel = GrpcChannel.ForAddress(clientChannelPath);
+      IEnumerable<Models.Object> objs = new List<Models.Object>();
+      var gobclient = new ObjectsServ.ObjectsServClient(channel);
+      var objallreply = await gobclient.GetAllAsync(new SecondVariety.Empty(), GetMetadata());
 
+      if (objallreply != null && objallreply.Items.Count > 0)
+      {
+        return objallreply.Items.Select(oo => ObjectFromGObject(oo));
+      }
+
+      return objs;
+    }
     public void DeleteObject(int Id)
     {
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
@@ -268,10 +281,7 @@ namespace SecondVariety
       {
         await telemetryclient.TrainingObjAsync(new GObjectId { Id = obkKod }, GetMetadata());
       }
-      catch 
-      {
-        
-      }
+      catch { }
     }
 
     public IEnumerable<Models.Telemetry> GetTelemetryServPeriod(DateTime start, DateTime end)
@@ -309,6 +319,101 @@ namespace SecondVariety
       }
       catch { }
       return tlmts ;
+    }
+
+   //return count records writed to db and total time
+   //on error return (null,null)
+    public async Task<(long?,long?)> UploadTelemetry(int oKod,int tType,DateTime dt,byte[] fInWitsmlFile)
+    {
+        using var channel = GrpcChannel.ForAddress(clientChannelPath);
+        var telemetryclient = new TelemetryServ.TelemetryServClient(channel);
+        var fbytes0 = fInWitsmlFile;
+        var ams1 = new MemoryStream();
+        
+        try
+        {
+        using(System.IO.Compression.DeflateStream dstream = new System.IO.Compression.DeflateStream(ams1, System.IO.Compression.CompressionLevel.Optimal))
+        {
+             await dstream.WriteAsync(fbytes0,0,fbytes0.Count()) ;   
+        }
+ 
+        var fbytes = ams1.ToArray() ;
+        int scount = 0;
+        if (fbytes != null && fbytes.Count() > 0)
+        {
+            var asyncfc =  async  () =>
+            {
+                using (var tcall = telemetryclient.UploadTelemetry(GetMetadata()))
+                {
+                    int i = 0;
+                    int step = 5024;
+                    for (i = 0; i < fbytes.Count(); i += step)
+                    {
+                        byte[] buf;
+                        if (i < (fbytes.Count() - step))
+                        {
+                            buf = new byte[step];
+                            Array.Copy(fbytes, i, buf, 0, step);
+                        }
+                        else
+                        {
+                            var sz = fbytes.Count() - i;
+                            buf = new byte[sz];
+                            Array.Copy(fbytes, i, buf, 0, sz);
+                        }
+                        var bara = Google.Protobuf.ByteString.CopyFrom(buf);
+
+                        await tcall.RequestStream.WriteAsync(new GWitsml { Data = bara });
+                        scount = i;
+                    }
+                    int objcode = oKod;
+                       //stack
+                       //1- kod
+                       //2- type
+                       //3- period y
+                       //4- period m
+                       //5- period d
+                       //6- period h
+                       //7- period m 
+                    var szi = sizeof(int);
+                    var kodBts = BitConverter.GetBytes(objcode);
+                    var typeBts = BitConverter.GetBytes(tType);  
+                    var yearBts = BitConverter.GetBytes(dt.Year);
+                    var monthBts = BitConverter.GetBytes(dt.Month);
+                    var dayBts = BitConverter.GetBytes(dt.Day);
+                    var hourBts = BitConverter.GetBytes(dt.Hour);
+                    var minBts = BitConverter.GetBytes(dt.Minute);
+
+
+                    var bArKod = Google.Protobuf.ByteString.CopyFrom(kodBts);
+                    var bArType = Google.Protobuf.ByteString.CopyFrom(typeBts);
+                    var bArYear = Google.Protobuf.ByteString.CopyFrom(yearBts);
+                    var bArMonth = Google.Protobuf.ByteString.CopyFrom(monthBts);
+                    var bArDay = Google.Protobuf.ByteString.CopyFrom(dayBts);
+                    var bArHour = Google.Protobuf.ByteString.CopyFrom(hourBts);
+                    var bArMin = Google.Protobuf.ByteString.CopyFrom(minBts);
+
+                    await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArKod });
+                    await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArType });
+                    await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArYear });
+                    await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArMonth });
+                    await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArDay });
+                    await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArHour });
+                    await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArMin });
+                    
+           
+
+                    await tcall.RequestStream.CompleteAsync();
+                    return await tcall.ResponseAsync;
+                }
+            };
+
+            var res = await asyncfc();
+            return (res.Count,res.TimeTotal) ;
+        }
+        }
+        catch{}
+        return (null,null);
     }
 
     public void DeleteRequest(long Id)
@@ -462,6 +567,7 @@ namespace SecondVariety
         WarningTime = FromDateTime(obj.WarningTime),
         WarningFrom = FromDateTime(obj.WarningFrom),
         WarningSensor = obj.WarningSensor ?? -1,
+        ErrorPeriod = obj.ErrorPeriod ?? -1,
         ErrorRate = obj.ErrorRate ?? -1
       };
       return gobj;
@@ -493,6 +599,7 @@ namespace SecondVariety
         WarningTime = ToMoscowFromTimeStamp(obj.WarningTime),
         WarningFrom = ToMoscowFromTimeStamp(obj.WarningFrom),
         WarningSensor = obj.WarningSensor,
+        ErrorPeriod = obj.ErrorPeriod,
         ErrorRate = obj.ErrorRate
       };
       return gobj;

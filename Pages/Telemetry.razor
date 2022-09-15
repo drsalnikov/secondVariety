@@ -160,7 +160,7 @@
     if (selected.WarningType.HasValue && selected.WarningType.Value > 0)
     {
       startDate = selected.WarningTime ?? DateTime.Now;
-      endDate = startDate.AddMinutes(61);
+      endDate = startDate.AddMinutes(60);
       warning4 = (selected.WarningType == 4);
     }
     else

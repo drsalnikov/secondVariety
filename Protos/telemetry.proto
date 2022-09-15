@@ -15,6 +15,7 @@ service TelemetryServ {
   rpc GetForPeriodForObjectWarning4(GTelemetryPeriodForObject) returns(GTelemetryTwoTypes) ;
   rpc GetLastTrainedRecId(google.protobuf.Empty) returns(GObjectId);
   rpc TrainingObj(GObjectId) returns(Empty) ;
+  rpc UploadTelemetry(stream GWitsml) returns(GUploadCount);
   rpc CheckingObj(GObjectId) returns(Empty) ;
   rpc Post(GTelemetry) returns(GTelemetry);
   rpc Put(GTelemetry) returns(GTelemetry);

@@ -1,15 +1,20 @@
-@page "/telemetry/{Id:long}/{DateTStr}/{DateTEtr}/{War4:int}/{ObjKod:int}"
+@page "/telemetrycalc/{Id:long}/{DateTStr?}/{DateTEtr?}/{War4:int?}/{ObjKod:int?}"
 
+@using System 
+@using System.IO
+@using Microsoft.AspNetCore.Hosting
 @using System.Linq.Dynamic.Core
 @using SecondVariety.Models;
 @using Microsoft.EntityFrameworkCore
-
+@using System.Timers
+@inject IWebHostEnvironment Environment
 @inject NavigationManager nav
 @inject GrpcClientService grpcClient
 
 
 <h1>@HeaderStr</h1>
 <div class="row gap-3">
+
     <RadzenChart>
           <RadzenLegend Position="LegendPosition.Top" />
         <RadzenLineSeries Smooth="true" Data="@Telemetries" CategoryProperty="Period" Title="@TeleMetr1Title"
@@ -38,6 +43,38 @@
         </RadzenValueAxis>
     </RadzenChart>
 </div>
+<div class="row gap-5" style=@FInputStyle>
+    <!--
+     <RadzenFileInput Accept="xml/*"  Visible="@FInputVisible"  @bind-FileName=@FileName @bind-FileSize=@FileSize TValue="string" Class="w-100" 
+                Change=@(args => OnChange(args, "FileInput")) Error=@(args => OnError(args, "FileInput")) />
+        -->
+        <div class="col">
+        <RadzenLabel Visible="@FInputVisible"  Text="Загрузка файла телеметрии"/>
+        </div>
+        <div class="col">
+          <InputFile style=@FInputStyle  OnChange="@LoadFiles"  />
+        </div>
+        <div class="col">
+                <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Период</RadzenText>
+        </div>
+        <div class="col">
+                 <RadzenDatePicker TValue="DateTime?" ShowTime="true" ShowSeconds="true" HoursStep="1.5" MinutesStep="5" SecondsStep="10" Change=@(args => OnFDateChange(args, "DatePicker with time", "MM/dd/yyyy HH:mm")) DateFormat="MM/dd/yyyy HH:mm" Class="w-100" />
+         </div>
+        <div class="col">
+             <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Тип</RadzenText>
+        </div>
+        <div class="col">
+               <RadzenNumeric Step="any" TValue="int" Change=@(args => OnTypeChange(args, "Numeric")) Class="w-100" />
+        </div>
+</div>
+<div style="@ProgressStyle" class="row gap-5" >
+    <div class="col">
+     <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">@ProgressText</RadzenText>
+    </div>
+   <div class="col">
+     <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    </div>
+</div>
 
 @code {
     [Parameter] public long Id { get; set; }
@@ -50,19 +87,43 @@
     public string TeleMetr1Title {get;set ;}
 
     public bool War4Visible {get;set;} = false ;
+    public bool FInputVisible {get;set;} = false ;
+    public string  FileName {get;set;} = "" ;
+    public long?  FileSize {get;set;} = 0 ;
+    
+    public bool NoTelemetryData {get;set;} = true ;
 
     public string TeleMetr2Title {get;set ;}
+
+    public string ProgressStyle {get;set;} = "visibility:hidden;"; 
+    public string ProgressText {get;set;} = " " ;
+    private Timer PrTimer;
+
+
+    public string FInputStyle  {get;set;} = "visibility:hidden;"; 
     List<Models.Telemetry> Telemetries  {get;set;} = new List<Models.Telemetry>() ;
     List<Models.Telemetry> Telemetries1 {get;set;} = new List<Models.Telemetry>() ;   
+
+    DateTime? FInputDate = DateTime.Now;
+
+    int TelemetrUpType = 0 ;
     protected override async Task OnInitializedAsync()
     {
         Telemetries = new List<Models.Telemetry>();
         Telemetries1 = new List<Models.Telemetry>();
-        var startDate = DateTimeFromBase64(DateTStr) ;
-        var endDate = DateTimeFromBase64(DateTEtr) ;
+  
         War4Visible = false ;
         if(ObjKod < 0 ) return ;
+
+        await LoadObjectTelemetry();
          
+    }
+
+
+    public async Task LoadObjectTelemetry()
+    {
+        var startDate = DateTimeFromBase64(DateTStr) ;
+        var endDate = DateTimeFromBase64(DateTEtr) ;
         try
         {
             if(War4 == 0 )
@@ -96,6 +157,9 @@
                    Telemetries1.AddRange(tt.Item2.OrderBy(ttt => ttt.Period)) ;
                    TeleMetr2Title = "Телеметрия Type2" ;
                    War4Visible = true ; 
+                   NoTelemetryData = false;
+                   FInputVisible = false ;
+                   FInputStyle = "visibility:hidden;"; 
                    return;
                }
             }
@@ -105,8 +169,68 @@
         Telemetries1.Add(new Models.Telemetry { Period = DateTime.Now , Value = 0 }) ;
         Telemetries.Add(new Models.Telemetry { Period = DateTime.Now , Value = 0 }) ;
         HeaderStr = $"Нет данных телеметрии для объекта №{ObjKod}" ; 
+        NoTelemetryData = true ;
+        FInputVisible = true;
         TeleMetr1Title = HeaderStr ;   
-       
+         FInputStyle = "visibility:visible;"; 
+    }
+
+    void OnTypeChange(dynamic value, string name)
+    {
+        if(value is int && value>-1) 
+                TelemetrUpType = (int)value ;
+    }
+
+
+    private async Task LoadFiles(InputFileChangeEventArgs e)
+    {
+        var f = e.File ;
+        Task<(long?,long?)> upltsk=null;
+        if(ObjKod==null)
+            return;
+        if(TelemetrUpType<0) TelemetrUpType = 0;    
+        try{
+            await using MemoryStream strms = new MemoryStream();
+            await f.OpenReadStream(20971520).CopyToAsync(strms);
+            byte[] bts = strms.ToArray();
+            upltsk = grpcClient.UploadTelemetry(ObjKod,TelemetrUpType,FInputDate??DateTime.Now,bts) ;
+            FInputStyle = "visibility:hidden;"; 
+            ProgressStyle =  "visibility:visible;" ;
+            ProgressText = "загрузка" ;
+        }
+        catch(Exception exp)
+        {
+           var msg = exp.Message ;
+           return ;
+        }
+        if(upltsk!=null&& !upltsk.IsCanceled && !upltsk.IsCompleted&&upltsk.Status != TaskStatus.Faulted&&upltsk.Status!=TaskStatus.RanToCompletion)
+        {
+            PrTimer = new Timer(300) ;
+            PrTimer.AutoReset = true ;
+            PrTimer.Elapsed += ( source,  e) => {
+                   if(upltsk.IsCompleted && upltsk.Status == TaskStatus.RanToCompletion)
+                   {
+                         PrTimer.Enabled = false ;
+                         grpcClient.TelemetryTrainingObj(ObjKod);
+                         ProgressStyle =  "visibility:hidden;" ;
+                         ProgressText = "" ;
+                         DateTStr = DateTimeToBase64(FInputDate??DateTime.Now);
+                         DateTEtr = DateTimeToBase64((FInputDate??DateTime.Now).AddHours(5));
+                         nav.NavigateTo($"/telemetry/{ObjKod}/{DateTStr}/{DateTEtr}/0/{ObjKod}", false);
+             
+                   } 
+                   else if(upltsk.IsCanceled)
+                   {
+                      nav.NavigateTo(@"/objects") ;
+                   }                   
+            } ;
+            PrTimer.Enabled = true ;
+        }
+    }
+
+    void OnFDateChange(DateTime? value, string name, string format)
+    {
+       FInputDate = value ;
     }
 
     DateTime DateTimeFromBase64(string strBased)
@@ -115,6 +239,14 @@
         var dstr = System.Text.Encoding.UTF8.GetString(dbytes);
         return DateTime.Parse(dstr);
     }
+
+
+  string DateTimeToBase64(DateTime dt)
+  {
+     var dbytes = System.Text.Encoding.UTF8.GetBytes(dt.ToString()) ;
+     var dbased = Convert.ToBase64String(dbytes); 
+     return dbased ;
+  }
     string GetDate()
     {
         return DateT.ToShortDateString();

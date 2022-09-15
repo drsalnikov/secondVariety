@@ -36,6 +36,7 @@ namespace SecondVariety.Models
         public DateTime? WarningTime { get; set; }
         public DateTime? WarningFrom { get; set; }
         public int? WarningSensor { get; set; }
+         public int? ErrorPeriod { get; set; }
         public float? ErrorRate { get; set; }
 
       /*  public virtual ICollection<Narabotka> Narabotkas { get; set; }

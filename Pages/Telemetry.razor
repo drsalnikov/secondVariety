@@ -47,8 +47,8 @@
 </div>
 
 <div class="row gap-3" >
-  <div class="col gap-3">
-    <RadzenChart Visible="@War4Visible">
+  <RadzenFieldset Text="@TeleMetr1Title" class="gap-3" Visible="@WarVisible">
+    <RadzenChart Visible="@WarVisible">
         <RadzenLegend Position="LegendPosition.Top" />
         <RadzenLineSeries Smooth="true" Data="@Telemetries" CategoryProperty="Period" Title="@TeleMetr1Title" ValueProperty="Value" RenderingOrder="1">
           <RadzenSeriesTrendLine Visible="true" Stroke="red" LineType="LineType.Solid" />
@@ -59,12 +59,12 @@
           <RadzenAxisTitle Text="Значение" />
         </RadzenValueAxis>
       </RadzenChart>
-  </div>
+  </RadzenFieldset>
 </div>
 
 <div class="row gap-3" >
-  <RadzenFieldset Text="@TeleMetr2Title" class="gap-3" >
-    <RadzenChart Visible="@War4Visible">
+  <RadzenFieldset Text="@TeleMetr2Title" class="gap-3" Visible="@War4Visible">
+    <RadzenChart >
       <RadzenLegend Position="LegendPosition.Top" />
       <RadzenLineSeries Smooth="true" Data="@Telemetries1" CategoryProperty="Period" Title="@TeleMetr2Title" ValueProperty="Value" RenderingOrder="1">
         <RadzenSeriesTrendLine Visible="true" Stroke="red" LineType="LineType.Solid" />

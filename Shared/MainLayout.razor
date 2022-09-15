@@ -74,7 +74,7 @@
     User = autsk.User;
     if (!autsk.User.Identity.IsAuthenticated)
     {
-      nav.NavigateTo("/Identity/Account/Login", true);
+      nav.NavigateTo("/Identity/Account/Login", false);
     }
   }
 }

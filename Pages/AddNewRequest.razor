@@ -132,7 +132,7 @@
 
   void Cancel()
   {
-    nav.NavigateTo("/requests", true);
+    nav.NavigateTo("/requests", false);
   }
 
   async Task LoadData()
@@ -168,10 +168,10 @@
     /*  
         db1context.Requests.Add(arg);
         db1context.SaveChanges();
-        nav.NavigateTo($"/objects/{arg.KodObject}", true);
+        nav.NavigateTo($"/objects/{arg.KodObject}", false);
     */
 
     grpcClient.AddRequest(arg);
-    nav.NavigateTo($"/objects/edit/{arg.KodObject}", true);
+    nav.NavigateTo($"/objects/edit/{arg.KodObject}", false);
   }
 }

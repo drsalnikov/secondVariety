@@ -359,7 +359,7 @@
 
   void CreateNewRequest()
   {
-    nav.NavigateTo("/requests/new", true);
+    nav.NavigateTo("/requests/new", false);
   }
 
   async Task InsertRowNarabotka()
@@ -402,13 +402,17 @@
       db1context.Objects.Update(arg);
       db1context.SaveChanges();
       */
+
       if(arg!=null)
+      {
+
+      }
         grpcClient.UpdateObject(arg) ;
-      nav.NavigateTo($"/objects/edit/{arg.Id}", true);
+    nav.NavigateTo($"/objects/edit/{arg.Id}", false);
   }
 
   void Cancel()
   {
-      nav.NavigateTo("/objects", true);
+      nav.NavigateTo("/objects", false);
   }
 }

@@ -159,11 +159,11 @@
     /*  db1context.Objects.Add(arg);
       db1context.SaveChanges();*/
       grpcClient.AddObject(arg) ;
-      nav.NavigateTo($"/objects/edit/{arg.Id.ToString()}", true);
+      nav.NavigateTo($"/objects/edit/{arg.Id.ToString()}", false);
   }
 
   void Cancel()
   {
-      nav.NavigateTo("/objects", true);
+      nav.NavigateTo("/objects", false);
   }
 }

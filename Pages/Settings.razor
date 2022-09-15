@@ -97,11 +97,11 @@
             switch (e.Value)
             {
               case 1:
-                nav.NavigateTo($"/telemetry/{args.Data.Kod}/{startBased}/{endBased}/{(warning4?1:0)}/{args.Data.Kod}", true);
+                //nav.NavigateTo($"/telemetry/{args.Data.Kod}/{startBased}/{endBased}/{(warning4 ? 1 : 0)}/{args.Data.Kod}", false);
                 ContextMenuService.Close() ;
                 break ;
               case 2:
-                nav.NavigateTo($"/objects/edit/{args.Data.Id}", true);
+                nav.NavigateTo($"/objects/edit/{args.Data.Id}", false);
                 ContextMenuService.Close() ;
                 break;
               case 3:

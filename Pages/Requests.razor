@@ -102,14 +102,14 @@
 
   void OnAddNewClick()
   {
-    nav.NavigateTo("/requests/new", true);
+    nav.NavigateTo("/requests/new", false);
   }
 
   void OnEditClick()
   {
     if (User?.IsInRole("Administrator") == true)
     {
-      nav.NavigateTo($"/requests/edit/{selected[0].Id}", true);
+      nav.NavigateTo($"/requests/edit/{selected[0].Id}", false);
     }
   }
 
@@ -134,7 +134,7 @@
     if(num!=null)
       grpcClient.DeleteRequest(num??-1) ;
 
-    nav.NavigateTo("/requests", true);
+    nav.NavigateTo("/requests", false);
   }
 
   void OnCellContextMenu(DataGridCellMouseEventArgs<RequestDTO> args)
@@ -150,7 +150,7 @@
             switch (e.Value)
             {
               case 1:
-                nav.NavigateTo($"/requests/edit/{args.Data.Id}", true);
+                nav.NavigateTo($"/requests/edit/{args.Data.Id}", false);
                 break;
               case 2:
                 Delete(args.Data.Id);

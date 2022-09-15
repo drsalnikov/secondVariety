@@ -163,7 +163,7 @@
 
   void Cancel()
   {
-      nav.NavigateTo("/requests", true);
+    nav.NavigateTo("/requests", false);
   }
 
   async Task LoadData()
@@ -181,11 +181,11 @@
       grpcClient.UpdateRequest(arg) ;
       if(User.IsInRole("Administrator"))
       {
-        nav.NavigateTo($"/objects/edit/{arg.KodObject}", true);
+        nav.NavigateTo($"/objects/edit/{arg.KodObject}", false);
       }
       else
       {
-        nav.NavigateTo($"/requests", true);
+        nav.NavigateTo($"/requests", false);
       }
   }
 }

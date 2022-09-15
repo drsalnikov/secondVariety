@@ -29,7 +29,7 @@ namespace SecondVariety.Areas.Identity.Pages.Account.Manage
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        [Display(Name = "Имя пользователя")]
+        [Display(Name = "РРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ")]
         public string Username { get; set; }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace SecondVariety.Areas.Identity.Pages.Account.Manage
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
             [Phone]
-            [Display(Name = "Номер телефона")]
+            [Display(Name = "РќРѕРјРµСЂ С‚РµР»РµС„РѕРЅР°")]
             public string PhoneNumber { get; set; }
         }
 

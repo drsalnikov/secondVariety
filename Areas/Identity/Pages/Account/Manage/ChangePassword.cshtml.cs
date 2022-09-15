@@ -54,7 +54,7 @@ namespace SecondVariety.Areas.Identity.Pages.Account.Manage
             /// </summary>
             [Required]
             [DataType(DataType.Password)]
-            [Display(Name = "Текущий пароль")]
+            [Display(Name = "РўРµРєСѓС‰РёР№ РїР°СЂРѕР»СЊ")]
             public string OldPassword { get; set; }
 
             /// <summary>
@@ -62,9 +62,9 @@ namespace SecondVariety.Areas.Identity.Pages.Account.Manage
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
             [Required]
-            [StringLength(100, ErrorMessage = "Пароль {0} должен быть больше {2} символов и не больше {1} символов.", MinimumLength = 6)]
+            [StringLength(100, ErrorMessage = "РџР°СЂРѕР»СЊ {0} РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ Р±РѕР»СЊС€Рµ {2} СЃРёРјРІРѕР»РѕРІ Рё РЅРµ Р±РѕР»СЊС€Рµ {1} СЃРёРјРІРѕР»РѕРІ.", MinimumLength = 6)]
             [DataType(DataType.Password)]
-            [Display(Name = "Новый пароль")]
+            [Display(Name = "РќРѕРІС‹Р№ РїР°СЂРѕР»СЊ")]
             public string NewPassword { get; set; }
 
             /// <summary>
@@ -72,8 +72,8 @@ namespace SecondVariety.Areas.Identity.Pages.Account.Manage
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
             [DataType(DataType.Password)]
-            [Display(Name = "Подтвердить новый пароль")]
-            [Compare("NewPassword", ErrorMessage = "Новый пароль и подтверждение пароля не совпадают.")]
+            [Display(Name = "РџРѕРґС‚РІРµСЂРґРёС‚СЊ РЅРѕРІС‹Р№ РїР°СЂРѕР»СЊ")]
+            [Compare("NewPassword", ErrorMessage = "РќРѕРІС‹Р№ РїР°СЂРѕР»СЊ Рё РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ РїР°СЂРѕР»СЏ РЅРµ СЃРѕРІРїР°РґР°СЋС‚.")]
             public string ConfirmPassword { get; set; }
         }
 
@@ -119,7 +119,7 @@ namespace SecondVariety.Areas.Identity.Pages.Account.Manage
 
             await _signInManager.RefreshSignInAsync(user);
             _logger.LogInformation("User changed their password successfully.");
-            StatusMessage = "Ваш пароль успешно изменен.";
+            StatusMessage = "Р’Р°С€ РїР°СЂРѕР»СЊ СѓСЃРїРµС€РЅРѕ РёР·РјРµРЅРµРЅ.";
 
             return RedirectToPage();
         }

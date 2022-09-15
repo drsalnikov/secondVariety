@@ -224,7 +224,7 @@
   private Task<AuthenticationState> authenticationStateTask { get; set; }
 
   private System.Security.Claims.ClaimsPrincipal? User ;
-  RadzenDataGrid<Narabotka> narabotkiGrid = new RadzenDataGrid<Narabotka>();
+  RadzenDataGrid<Narabotka> narabotkiGrid;
   Narabotka narabotkaToInsert;
   EventConsole console;
 
@@ -235,7 +235,6 @@
   private bool isLoading;
   private int countRequests;
   private int countNarabotka;
-
 
   protected override async Task OnInitializedAsync()
   {
@@ -385,15 +384,14 @@
 
   void OnCreateRowNarabotka(Narabotka narabotka)
   {
-      
-      /*db1context.Narabotkas.Add(narabotka);
+    /*db1context.Narabotkas.Add(narabotka);
       db1context.SaveChanges();
-*/      
-        grpcClient.AddNarabotka(narabotka) ;
-        var enar    = grpcClient.GetNarabotkasByObjectKodSync(myObj.Id) ;
-        narabotki  = enar.ToList() ;
-        countNarabotka = narabotki.Count();
-        narabotkiGrid.Reload();
+    */      
+    grpcClient.AddNarabotka(narabotka) ;
+    var enar    = grpcClient.GetNarabotkasByObjectKodSync(myObj.Id) ;
+    narabotki  = enar.ToList() ;
+    countNarabotka = narabotki.Count();
+    narabotkiGrid.Reload();
   }
 
   void OnSubmit(Object arg)
@@ -401,14 +399,13 @@
     /*  
       db1context.Objects.Update(arg);
       db1context.SaveChanges();
-      */
+     */
 
-      if(arg!=null)
-      {
-
-      }
+      if(arg != null)
+      {        
         grpcClient.UpdateObject(arg) ;
-    nav.NavigateTo($"/objects/edit/{arg.Id}", false);
+        nav.NavigateTo($"/objects/edit/{arg.Id}", false);
+      }
   }
 
   void Cancel()

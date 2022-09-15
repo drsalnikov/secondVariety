@@ -9,18 +9,22 @@
 @inject GrpcClientService grpcClient
 @inject NotificationService NotificationService
 
-  <h1>Рассчёт телеметрии по объекту</h1>
+<h1>Рассчёт телеметрии по объекту</h1>
 
-  <div class="row gap-3">
-    <div class="col">
-      <RadzenFieldset Text="Действия" class="gap-3">
-        <RadzenButton Click=@ShowChart Text="Выполнить анализ" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
-      </RadzenFieldset>
-    </div>
+<div class="row gap-3">
+  <div class="col">
+    <RadzenFieldset Text="Действия" class="gap-3">
+      <RadzenButton Click=@ShowChart Text="Выполнить анализ" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
+    </RadzenFieldset>
   </div>
+</div>
 
-  <div class="row gap-3">
-    <RadzenDropDownDataGrid Name="Object" TValue="int" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" 
+<div class="row gap-3">
+  <RadzenFieldset Text="Объект" class="gap-3">
+    <RadzenDropDownDataGrid Name="Object"
+        Style="width: 100%"
+        TValue="int" 
+        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" 
         AllowFiltering="true"
         AllowClear="true"
         Data=@objects
@@ -29,7 +33,9 @@
         Change="@OnChange"
         TextProperty="Name"
         ValueProperty="Id"
-        PageSize="10"
+        PageSize="20"
+        Placeholder="Выберите объект"
+        SearchText="Поиск"
         AllowFilteringByAllStringColumns="true">
       <Columns>
         <RadzenDropDownDataGridColumn Property="Kod" Title="Код" />
@@ -37,24 +43,28 @@
       </Columns>
     </RadzenDropDownDataGrid>
     <RadzenRequiredValidator Component="Object" Text="Выбор объекта для формирования графика телеметрии является обязательным" />
-  </div>
+  </RadzenFieldset>
+</div>
 
-  <div class="row gap-3">
-    <RadzenChart Visible="@WarVisible">
-      <RadzenLegend Position="LegendPosition.Top" />
-      <RadzenLineSeries Smooth="true" Data="@Telemetries" CategoryProperty="Period" Title="@TeleMetr1Title" ValueProperty="Value" RenderingOrder="1">
-        <RadzenSeriesTrendLine Visible="true" Stroke="red" LineType="LineType.Solid" />
-      </RadzenLineSeries>
-      <RadzenCategoryAxis Padding="20" Formatter="@FormatAsTime" />
-      <RadzenValueAxis Formatter="@FormatAsVal">
-        <RadzenGridLines Visible="true" />
-        <RadzenAxisTitle Text="Значение" />
-      </RadzenValueAxis>
-    </RadzenChart>
+<div class="row gap-3" >
+  <div class="col gap-3">
+    <RadzenChart Visible="@War4Visible">
+        <RadzenLegend Position="LegendPosition.Top" />
+        <RadzenLineSeries Smooth="true" Data="@Telemetries" CategoryProperty="Period" Title="@TeleMetr1Title" ValueProperty="Value" RenderingOrder="1">
+          <RadzenSeriesTrendLine Visible="true" Stroke="red" LineType="LineType.Solid" />
+        </RadzenLineSeries>
+        <RadzenCategoryAxis Padding="20" Formatter="@FormatAsTime" />
+        <RadzenValueAxis Formatter="@FormatAsVal">
+          <RadzenGridLines Visible="true" />
+          <RadzenAxisTitle Text="Значение" />
+        </RadzenValueAxis>
+      </RadzenChart>
   </div>
+</div>
 
-  <div class="row gap-3">
-    <RadzenChart Visible="@War4Visible">        
+<div class="row gap-3" >
+  <RadzenFieldset Text="@TeleMetr2Title" class="gap-3" >
+    <RadzenChart Visible="@War4Visible">
       <RadzenLegend Position="LegendPosition.Top" />
       <RadzenLineSeries Smooth="true" Data="@Telemetries1" CategoryProperty="Period" Title="@TeleMetr2Title" ValueProperty="Value" RenderingOrder="1">
         <RadzenSeriesTrendLine Visible="true" Stroke="red" LineType="LineType.Solid" />
@@ -65,14 +75,16 @@
         <RadzenAxisTitle Text="Значение" />
       </RadzenValueAxis>
     </RadzenChart>
-  </div>
+  </RadzenFieldset>
+</div>
 
-@code {
-  //[Parameter] public long Id { get; set; }
-  //[Parameter] public string DateTStr { get; set; }
-  //[Parameter] public string DateTEtr { get; set; }
-  //[Parameter] public int War4 { get; set; }
-  //[Parameter] public int ObjKod { get; set; }
+@code 
+{
+    //[Parameter] public long Id { get; set; }
+    //[Parameter] public string DateTStr { get; set; }
+    //[Parameter] public string DateTEtr { get; set; }
+    //[Parameter] public int War4 { get; set; }
+    //[Parameter] public int ObjKod { get; set; }
   private IEnumerable<Object> objects = Enumerable.Empty<Object>();
   private int count;
   private Object? selected;
@@ -94,6 +106,7 @@
     var objs = grpcClient.GetObjects();
     objects = objs.OrderBy(o => o.Kod);
     count = objects.Count();
+    await Task.Yield();
   }
 
   void OnChange(object args)
@@ -101,20 +114,39 @@
     if (args is int)
     {
       int id = Convert.ToInt32(args);
-      var message = new NotificationMessage
-        {
-          Severity = NotificationSeverity.Info,
-          Summary = "Выбран",
-          Detail = String.Format("объект с ID {0}", id),
-          Duration = 4000
-        };
-
-      NotificationService.Notify(message);
       selected = objects.FirstOrDefault(o => o.Id == id);
+
+      ShowMessage(String.Format("Выбран {0}", selected?.Name));
     }
   }
 
-  void ShowChart()
+  void ShowMessage(string text)
+  {
+    var message = new NotificationMessage
+      {
+        Severity = NotificationSeverity.Success,
+        Summary = "Сообщение",
+        Detail = String.Format("{0}", text),
+        Duration = 10000
+      };
+
+    NotificationService.Notify(message);
+  }
+
+  void ShowMessageError(string text)
+  {
+    var message = new NotificationMessage
+    {
+      Severity = NotificationSeverity.Error,
+      Summary = "Ошибка",
+      Detail = String.Format("{0}", text),
+      Duration = 10000
+    };
+
+    NotificationService.Notify(message);
+  }
+
+  async Task ShowChart()
   {
     DateTime startDate;
     DateTime endDate;
@@ -155,11 +187,15 @@
           Telemetries.AddRange(tt.OrderBy(ttt => ttt.Period));
           Telemetries1.Add(new Models.Telemetry { Period = DateTime.Now, Value = 0 });
           WarVisible = true;
+          await InvokeAsync(StateHasChanged);
           return;
         }
       }
     }
-    catch { }
+    catch(Exception e)
+    {
+      ShowMessageError(e.Message);
+    }
 
     try
     {
@@ -176,17 +212,21 @@
           Telemetries1.AddRange(tt.Item2.OrderBy(ttt => ttt.Period));
           TeleMetr2Title = "Телеметрия Type2";
           War4Visible = true;
+          await InvokeAsync(StateHasChanged);
           return;
         }
       }
     }
-
-    catch { }
+    catch(Exception e)
+    {
+      ShowMessageError(e.Message);
+    }
 
     Telemetries1.Add(new Models.Telemetry { Period = DateTime.Now, Value = 0 });
     Telemetries.Add(new Models.Telemetry { Period = DateTime.Now, Value = 0 });
     HeaderStr = $"Нет данных телеметрии для объекта №{selected.Kod}";
     TeleMetr1Title = HeaderStr;
+    await InvokeAsync(StateHasChanged);
 
   }
 

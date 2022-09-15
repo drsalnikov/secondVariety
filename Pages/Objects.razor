@@ -8,6 +8,7 @@
 @inject NavigationManager nav
 @inject ContextMenuService ContextMenuService
 @inject GrpcClientService grpcClient 
+@inject NotificationService NotificationService
 
   <h1>Объекты</h1>
   <AuthorizeView Roles="Administrator">
@@ -53,11 +54,9 @@
             <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="PlanYear" Title="Планируемая наработка в год" Width="70px" />
             <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="TekNar" Title="Текущая наработка" Width="55px" />
             <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="SredNar" Title="Среднедневная наработка" Width="70px" />
-            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="WarningType" Title="Предупреждение" Width="75px" >
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" TextAlign="TextAlign.Center" Property="WarningType" Title="Предупреждение" Width="50px" >
               <Template Context="cont">
-                <div style="background-color:@GetColor(cont.WarningType)">
-                  <RadzenIcon Icon=@GetIcon(cont.WarningType) />
-                </div>
+                <RadzenIcon Icon=@GetIcon(cont.WarningType) Style=@GetColor(cont.WarningType) />
               </Template>
             </RadzenDataGridColumn>
       <RadzenDataGridColumn TItem="Object" Property="WarningTime" FormatString="{0:d}" Title="Время предупреждения" Width="70px" />
@@ -129,50 +128,29 @@
 
   string GetColor(int? wt)
   {
-    if(wt==null) return "white" ;
-    switch(wt)
+    if(wt.HasValue && wt.Value > 0)
     {
-      case 0:
-        return "#96f480" ;
-
-      case 1:
-        return "#d5e969" ; 
-
-      case 2:
-        return "#f49f58" ;
-
-      case 3:
-        return "#f18989" ;
-
-      case 4:
-        return "#ed3636" ;
-
+      return "color:red";
     }
-    return "red";
+
+    return "color:#26b050";
   }
 
   string GetIcon(int? wt)
   {
-    if (wt == null) return "check_circle";
-    switch (wt)
+    if(wt.HasValue && wt.Value > 0)
     {
-      case 0:
-        return "check_circle";
-
-      case 1:
-        return "refresh";
-
-      case 2:
-        return "privacy_tip";
-
-      case 3:
-        return "warning_amber";
-
-      case 4:
-        return "report";
-
+      return "warning_amber";
     }
-    return "report";
+
+    return "check_circle";
+
+    //return "check_circle";
+    //return "warning_amber";
+    //return "refresh";
+    //return "privacy_tip";
+    //return "warning_amber";
+    //return "report";
   }
 
   bool isSelected()
@@ -186,48 +164,75 @@
     if(User?.IsInRole("Administrator") == true)
     {
 
-    ContextMenuService.Open(args,
-        new List<ContextMenuItem> {
+      ContextMenuService.Open(args,
+          new List<ContextMenuItem> {
               //new ContextMenuItem(){ Text = "Телеметрия", Value = 1 },             
               new ContextMenuItem(){ Text = "Редактировать", Value = 2 },
               new ContextMenuItem(){ Text = "Удалить", Value = 3 },
-              new ContextMenuItem(){ Text = "Обучить", Value = 4 },
-              new ContextMenuItem(){ Text = "Проверить обучение", Value = 5 }
+              //new ContextMenuItem(){ Text = "Обучить", Value = 4 },
+              //new ContextMenuItem(){ Text = "Проверить обучение", Value = 5 }
           }, 
-          (e) => { 
-            switch (e.Value)
-            {
-              case 1:
-                //nav.NavigateTo($"/telemetry/{args.Data.Kod}/{startBased}/{endBased}/{(warning4?1:0)}/{args.Data.Kod}", false);
-                ContextMenuService.Close() ;
-                break ;
-              case 2:
-                nav.NavigateTo($"/objects/edit/{args.Data.Id}", false);
-                ContextMenuService.Close() ;
-                break;
-              case 3:
-                DeleteObject(args.Data.Id);
-                ContextMenuService.Close() ;
-                break;
-              case 4:
-                
-                 ContextMenuService.Close() ;
-                break ;
-              case 5:                
-                grpcClient.CheckingTrainingObj(args.Data.Kod) ;
-                 ContextMenuService.Close() ;
-                break;  
+            (e) => { 
+              switch (e.Value)
+              {
+                case 1:
+                  //nav.NavigateTo($"/telemetry/{args.Data.Kod}/{startBased}/{endBased}/{(warning4?1:0)}/{args.Data.Kod}", false);
+                  ContextMenuService.Close() ;
+                  break ;
+                case 2:
+                  nav.NavigateTo($"/objects/edit/{args.Data.Id}", false);
+                  ContextMenuService.Close() ;
+                  break;
+                case 3:
+                  DeleteObject(args.Data);
+                  ContextMenuService.Close() ;
+                  break;
+                case 4:
+                  ContextMenuService.Close() ;
+                  break ;
+                case 5:                
+                  //grpcClient.CheckingTrainingObj(args.Data.Kod) ;
+                  ContextMenuService.Close() ;
+                  break;  
 
+              }
+
+              //console.Log($"e: {e.Value}. args: {args.Data.Num}."); 
             }
-
-            //console.Log($"e: {e.Value}. args: {args.Data.Num}."); 
-          }
-        );
-     }
+          );
+    }
   }
 
-  void DeleteObject(int Id)
+  void DeleteObject(object obj)
   {
-    grpcClient.DeleteObject(Id);
+    Object _obj = obj as Object;
+
+    try
+    {
+      grpcClient.DeleteObject(_obj.Id);
+
+      var message = new NotificationMessage
+        {
+          Severity = NotificationSeverity.Success,
+          Summary = "Удален",
+          Detail = String.Format("Объект {0} успешно удален", _obj.Name),
+          Duration = 3000
+        };
+
+      NotificationService.Notify(message);
+    }
+    catch
+    {
+      var message = new NotificationMessage
+        {
+          Severity = NotificationSeverity.Error,
+          Summary = "Ошибка",
+          Detail = String.Format("Ошибка при удалении объекта {0}", _obj.Name),
+          Duration = 5000
+        };
+
+      NotificationService.Notify(message);
+    }
+    
   }
 }

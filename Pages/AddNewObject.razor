@@ -2,6 +2,7 @@
 
 @using Microsoft.EntityFrameworkCore
 @using SecondVariety.Models;
+@using Object = SecondVariety.Models.Object
 @using Microsoft.AspNetCore.Authorization
 @inject IAuthorizationService AuthorizationService
 
@@ -9,7 +10,7 @@
 @inject GrpcClientService grpcClient 
 
   <h1>Создать новый объект</h1>
-  <RadzenTemplateForm TItem="SecondVariety.Models.Object" Data="@myObj" Submit="@OnSubmit">
+  <RadzenTemplateForm TItem="Object" Data="@myObj" Submit="@OnSubmit">
     <div class="row gap-3">
       <div class="col">
         <RadzenFieldset Text="Действия" class="gap-3">
@@ -154,10 +155,13 @@
     isLoading = false;
   }
 
-  void OnSubmit(SecondVariety.Models.Object arg)
+  void OnSubmit(Object arg)
   {
-    /*  db1context.Objects.Add(arg);
-      db1context.SaveChanges();*/
+    /*
+      db1context.Objects.Add(arg);
+      db1context.SaveChanges();
+    */
+
       grpcClient.AddObject(arg) ;
       nav.NavigateTo($"/objects/edit/{arg.Id.ToString()}", false);
   }

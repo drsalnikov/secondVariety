@@ -2,11 +2,10 @@
 
 @using System.Linq.Dynamic.Core
 @using System.ComponentModel.DataAnnotations
-@using SecondVariety.Models;
+@using SecondVariety.Models
 
-
-@inject NavigationManager nav;
-@inject GrpcClientService grpcClient ;
+@inject NavigationManager nav
+@inject GrpcClientService grpcClient
 
   <h1>Создать новую заявку</h1>
   <RadzenTemplateForm TItem="Request" Data="@newRequest" Submit="@OnSubmit" >
@@ -98,8 +97,8 @@
 @code {
   [CascadingParameter]
   private Task<AuthenticationState> authenticationStateTask { get; set; }
+  private System.Security.Claims.ClaimsPrincipal? User;
 
-  private System.Security.Claims.ClaimsPrincipal? User ;
   private Request newRequest = new Request();
   private IEnumerable<SecondVariety.Models.Object> objects = Enumerable.Empty<SecondVariety.Models.Object>();
   int count;
@@ -151,11 +150,11 @@
       return;
     }
 
-    var objs = grpcClient.GetObjects() ;
-    objects = objs.OrderBy(o => o.Kod) ;
+    var objs = grpcClient.GetObjects();
+    objects = objs.OrderBy(o => o.Kod);
     count = objects.Count();
      
-    var reqs = grpcClient.GetRequests() ;
+    var reqs = grpcClient.GetRequests();
     var lastnumbers = reqs.Select(r => r.Num).OrderBy(r => r).ToList();
     lastnumber = lastnumbers.LastOrDefault() + 1;
 

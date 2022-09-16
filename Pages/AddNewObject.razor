@@ -162,8 +162,9 @@
       db1context.SaveChanges();
     */
 
-      grpcClient.AddObject(arg) ;
-      nav.NavigateTo($"/objects/edit/{arg.Id.ToString()}", false);
+    grpcClient.AddObject(arg);
+    grpcClient.CheckingTrainingObj(arg.Kod);
+    nav.NavigateTo($"/objects/edit/{arg.Id.ToString()}", false);
   }
 
   void Cancel()

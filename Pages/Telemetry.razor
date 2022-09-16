@@ -12,11 +12,9 @@
 <h1>Рассчёт телеметрии по объекту</h1>
 
 <div class="row gap-3">
-  <div class="col">
-    <RadzenFieldset Text="Действия" class="gap-3">
-      <RadzenButton Click=@ShowChart Text="Выполнить анализ" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
-    </RadzenFieldset>
-  </div>
+  <RadzenFieldset Text="Действия" class="gap-3">
+    <RadzenButton Click=@ShowChart Text="Выполнить анализ" Disabled=@isDisabled() Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
+  </RadzenFieldset>
 </div>
 
 <div class="row gap-3">
@@ -43,6 +41,18 @@
       </Columns>
     </RadzenDropDownDataGrid>
     <RadzenRequiredValidator Component="Object" Text="Выбор объекта для формирования графика телеметрии является обязательным" />
+  </RadzenFieldset>
+</div>
+
+<div class="row gap-3">
+  <RadzenFieldset Text="Описание" class="gap-3">
+    <p>Описание сценария, иначе не понятно, что за график.</p>
+  </RadzenFieldset>
+</div>
+
+<div class="row gap-3" >
+  <RadzenFieldset Text="Построение графика" class="gap-3" Visible="@isLoading">
+    <RadzenProgressBar ProgressBarStyle="ProgressBarStyle.Primary" Visible="@isLoading" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
   </RadzenFieldset>
 </div>
 
@@ -80,23 +90,25 @@
 
 @code 
 {
-    //[Parameter] public long Id { get; set; }
-    //[Parameter] public string DateTStr { get; set; }
-    //[Parameter] public string DateTEtr { get; set; }
-    //[Parameter] public int War4 { get; set; }
-    //[Parameter] public int ObjKod { get; set; }
+  //[Parameter] public long Id { get; set; }
+  //[Parameter] public string DateTStr { get; set; }
+  //[Parameter] public string DateTEtr { get; set; }
+  //[Parameter] public int War4 { get; set; }
+  //[Parameter] public int ObjKod { get; set; }
   private IEnumerable<Object> objects = Enumerable.Empty<Object>();
   private int count;
   private Object? selected;
 
   public DateTime DateT { get; set; }
-  public string HeaderStr {get;set;}
-  public string TeleMetr1Title {get;set ;}
+  public string HeaderStr {get; set; }
+  public string TeleMetr1Title {get; set; }
+  public string TeleMetr2Title {get; set; }
 
-  public bool War4Visible {get;set;} = false ;
-  public bool WarVisible { get; set; } = false;
+  private bool isLoading = false;
 
-  public string TeleMetr2Title {get;set ;}
+  public bool War4Visible {get; set; } = false ;
+  public bool WarVisible {get; set; } = false;
+
 
   List<Models.Telemetry> Telemetries  {get;set;} = new List<Models.Telemetry>();
   List<Models.Telemetry> Telemetries1 {get;set;} = new List<Models.Telemetry>();
@@ -148,6 +160,8 @@
 
   async Task ShowChart()
   {
+    isLoading = true;
+
     DateTime startDate;
     DateTime endDate;
     bool warning4 = false;
@@ -156,6 +170,9 @@
     {
       return;
     }
+
+    await grpcClient.TelemetryTrainingObj(selected.Kod);
+    await grpcClient.CheckingTrainingObj(selected.Kod);
 
     if (selected.WarningType.HasValue && selected.WarningType.Value > 0)
     {
@@ -172,6 +189,7 @@
     Telemetries = new List<Models.Telemetry>();
     Telemetries1 = new List<Models.Telemetry>();
 
+    WarVisible = false;
     War4Visible = false;
 
     try
@@ -187,7 +205,7 @@
           Telemetries.AddRange(tt.OrderBy(ttt => ttt.Period));
           Telemetries1.Add(new Models.Telemetry { Period = DateTime.Now, Value = 0 });
           WarVisible = true;
-          await InvokeAsync(StateHasChanged);
+          isLoading = false;
           return;
         }
       }
@@ -212,7 +230,7 @@
           Telemetries1.AddRange(tt.Item2.OrderBy(ttt => ttt.Period));
           TeleMetr2Title = "Телеметрия Type2";
           War4Visible = true;
-          await InvokeAsync(StateHasChanged);
+          isLoading = false;
           return;
         }
       }
@@ -224,15 +242,15 @@
 
     Telemetries1.Add(new Models.Telemetry { Period = DateTime.Now, Value = 0 });
     Telemetries.Add(new Models.Telemetry { Period = DateTime.Now, Value = 0 });
-    HeaderStr = $"Нет данных телеметрии для объекта №{selected.Kod}";
+    HeaderStr = $"Нет данных телеметрии для объекта №{selected.Name}";
     TeleMetr1Title = HeaderStr;
-    await InvokeAsync(StateHasChanged);
-
+    WarVisible = true;
+    isLoading = false;
   }
 
-  bool isSelected()
+  bool isDisabled()
   {
-    return selected != null;
+    return selected == null;
   }
 
   string DateTimeToBase64(DateTime dt)

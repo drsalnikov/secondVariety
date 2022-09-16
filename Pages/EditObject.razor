@@ -108,8 +108,6 @@
     
   </RadzenTemplateForm>
 
-
-
   <div class="row gap-3">
     <div class="col">
       <RadzenFieldset Text="Заявки">
@@ -224,7 +222,7 @@
   private Task<AuthenticationState> authenticationStateTask { get; set; }
 
   private System.Security.Claims.ClaimsPrincipal? User ;
-  RadzenDataGrid<Narabotka> narabotkiGrid;
+  RadzenDataGrid<Narabotka>? narabotkiGrid;
   Narabotka narabotkaToInsert;
   EventConsole console;
 
@@ -399,13 +397,14 @@
     /*  
       db1context.Objects.Update(arg);
       db1context.SaveChanges();
-     */
+    */
 
-      if(arg != null)
-      {        
-        grpcClient.UpdateObject(arg) ;
-        nav.NavigateTo($"/objects/edit/{arg.Id}", false);
-      }
+    if(arg != null)
+    {        
+      grpcClient.UpdateObject(arg);
+      grpcClient.CheckingTrainingObj(arg.Kod);
+      nav.NavigateTo($"/objects/edit/{arg.Id}", false);
+    }
   }
 
   void Cancel()

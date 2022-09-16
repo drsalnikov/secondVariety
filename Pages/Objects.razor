@@ -1,8 +1,8 @@
 ﻿@page "/objects"
 
+@using System.Linq;
 @using System.Linq.Dynamic.Core
 @using SecondVariety.Models;
-@using System.Linq;
 @using Object = SecondVariety.Models.Object;
 
 @inject NavigationManager nav
@@ -205,13 +205,13 @@
                   break;
                 case 3:
                   DeleteObject(args.Data);
-                  ContextMenuService.Close() ;
+                  ContextMenuService.Close();
                   break;
                 case 4:
-                  ContextMenuService.Close() ;
+                  ContextMenuService.Close();
                   break ;
                 case 5:                
-                  //grpcClient.CheckingTrainingObj(args.Data.Kod) ;
+                  //grpcClient.CheckingTrainingObj(args.Data.Kod);
                   ContextMenuService.Close() ;
                   break;  
 

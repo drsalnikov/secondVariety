@@ -1,0 +1,251 @@
+@page "/uploadtel"
+
+@using System 
+@using System.IO
+@using Microsoft.AspNetCore.Hosting
+@using System.Linq.Dynamic.Core
+@using SecondVariety.Models;
+@using Microsoft.EntityFrameworkCore
+@using System.Timers
+@inject IWebHostEnvironment Environment
+@inject NavigationManager nav
+@inject GrpcClientService grpcClient
+@inject NotificationService NotificationService
+
+
+<div class="row gap-2">
+    <RadzenFieldset Text="Объект" class="gap-3">
+        <RadzenDropDownDataGrid Name="Object" Style="width: 100%" TValue="int"
+            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" AllowFiltering="true" AllowClear="true"
+            Data=@objects AllowColumnResize="true" Count="@count" Change="@OnChange" TextProperty="Name"
+            ValueProperty="Id" PageSize="20" Placeholder="Выберите объект" SearchText="Поиск"
+            AllowFilteringByAllStringColumns="true">
+            <Columns>
+                <RadzenDropDownDataGridColumn Property="Kod" Title="Код" />
+                <RadzenDropDownDataGridColumn Property="Name" Title="Имя" />
+            </Columns>
+        </RadzenDropDownDataGrid>
+        <RadzenRequiredValidator Component="Object"
+            Text="Выбор объекта для формирования графика телеметрии является обязательным" />
+    </RadzenFieldset>
+</div>
+
+<div class="row gap-3" style=@FInputStyle>
+    <!--
+     <RadzenFileInput Accept="xml/*"  Visible="@FInputVisible"  @bind-FileName=@FileName @bind-FileSize=@FileSize TValue="string" Class="w-100" 
+                Change=@(args => OnChange(args, "FileInput")) Error=@(args => OnError(args, "FileInput")) />
+        -->
+    <div class="col">
+        <RadzenLabel Visible="@FInputVisible" Text="Загрузка файла телеметрии" />
+    </div>
+    <div class="col">
+        <InputFile style=@FInputStyle OnChange="@LoadFiles" />
+    </div>
+    <div class="col">
+        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Период</RadzenText>
+    </div>
+    <div class="col">
+        <RadzenDatePicker TValue="DateTime?" ShowTime="true" ShowSeconds="true" HoursStep="1.5" MinutesStep="5"
+            SecondsStep="10" Change=@(args => OnFDateChange(args, "DatePicker with time", "MM/dd/yyyy HH:mm"))
+            DateFormat="MM/dd/yyyy HH:mm" Class="w-100" />
+    </div>
+    <div class="col">
+        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Тип</RadzenText>
+    </div>
+    <div class="col">
+        <RadzenNumeric Step="any" TValue="int" Change=@(args => OnTypeChange(args, "Numeric")) Class="w-100" />
+    </div>
+</div>
+<div style="@ProgressStyle" class="row gap-5">
+    <div class="col">
+        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">@ProgressText</RadzenText>
+    </div>
+    <div class="col">
+        <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    </div>
+</div>
+
+@code
+{
+    //[Parameter] public long Id { get; set; }
+    //[Parameter] public string DateTStr { get; set; }
+    //[Parameter] public string DateTEtr { get; set; }
+    //[Parameter] public int War4 { get; set; }
+    //[Parameter] public int ObjKod { get; set; }
+    private IEnumerable<Models.Object> objects = Enumerable.Empty<Models.Object>();
+    private int count;
+    private Models.Object? selected;
+
+    public DateTime DateT { get; set; }
+    public string HeaderStr { get; set; }
+    public string TeleMetr1Title { get; set; }
+
+    public bool War4Visible { get; set; } = false;
+    public bool WarVisible { get; set; } = false;
+
+    public string TeleMetr2Title { get; set; }
+
+    List<Models.Telemetry> Telemetries { get; set; } = new List<Models.Telemetry>();
+    List<Models.Telemetry> Telemetries1 { get; set; } = new List<Models.Telemetry>();
+    int TelemetrUpType = 0;
+    public string ProgressStyle { get; set; } = "visibility:hidden;";
+    public string ProgressText { get; set; } = " ";
+    private Timer PrTimer;
+    public string FInputStyle { get; set; } = "visibility:hidden;";
+    public bool FInputVisible { get; set; } = false;
+    public string FileName { get; set; } = "";
+    public long? FileSize { get; set; } = 0;
+    DateTime? FInputDate = DateTime.Now;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var objs = grpcClient.GetObjects();
+        objects = objs.OrderBy(o => o.Kod);
+        count = objects.Count();
+        await Task.Yield();
+    }
+
+    void OnChange(object args)
+    {
+        if (args is int)
+        {
+            int id = Convert.ToInt32(args);
+            selected = objects.FirstOrDefault(o => o.Id == id);
+            FInputVisible = true;
+            FInputStyle = "visibility:visible;"; 
+            ShowMessage(String.Format("Выбран {0}", selected?.Name));
+        }
+    }
+
+    void ShowMessage(string text)
+    {
+        var message = new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Summary = "Сообщение",
+            Detail = String.Format("{0}", text),
+            Duration = 10000
+        };
+
+        NotificationService.Notify(message);
+    }
+
+    void ShowMessageError(string text)
+    {
+        var message = new NotificationMessage
+        {
+            Severity = NotificationSeverity.Error,
+            Summary = "Ошибка",
+            Detail = String.Format("{0}", text),
+            Duration = 10000
+        };
+
+        NotificationService.Notify(message);
+    }
+
+    private async Task LoadFiles(InputFileChangeEventArgs e)
+    {
+        if (selected == null) return;
+        var ObjKod = selected.Kod;
+
+        var f = e.File;
+        Task<(long?, long?)> upltsk = null;
+        if (ObjKod == null)
+            return;
+        if (TelemetrUpType < 0) TelemetrUpType = 0;
+        try
+        {
+            await using MemoryStream strms = new MemoryStream();
+            await f.OpenReadStream(20971520).CopyToAsync(strms);
+            byte[] bts = strms.ToArray();
+            upltsk = grpcClient.UploadTelemetry(ObjKod, TelemetrUpType, FInputDate ?? DateTime.Now, bts);
+            FInputStyle = "visibility:hidden;";
+            ProgressStyle = "visibility:visible;";
+            ProgressText = "загрузка";
+        }
+        catch (Exception exp)
+        {
+            var msg = exp.Message;
+            return;
+        }
+        if (upltsk != null && !upltsk.IsCanceled && !upltsk.IsCompleted && upltsk.Status !=
+        TaskStatus.Faulted && upltsk.Status != TaskStatus.RanToCompletion)
+        {
+            PrTimer = new Timer(300);
+            PrTimer.AutoReset = true;
+            PrTimer.Elapsed += (source, e) =>
+            {
+                if (upltsk.IsCompleted && upltsk.Status == TaskStatus.RanToCompletion)
+                {
+                    PrTimer.Enabled = false;
+                    grpcClient.TelemetryTrainingObj(ObjKod);
+                    ProgressStyle = "visibility:hidden;";
+                    ProgressText = "";
+                    var DateTStr = DateTimeToBase64(FInputDate ?? DateTime.Now);
+                    var DateTEtr = DateTimeToBase64((FInputDate ?? DateTime.Now).AddHours(5));
+                    nav.NavigateTo($"/objects", false);
+
+                }
+                else if (upltsk.IsCanceled)
+                {
+                    nav.NavigateTo(@"/objects",false);
+                }
+            };
+            PrTimer.Enabled = true;
+        }
+    }
+
+    void OnTypeChange(dynamic value, string name)
+    {
+        if(value is int && value>-1) 
+                TelemetrUpType = (int)value ;
+    }
+
+    bool isSelected()
+    {
+        return selected != null;
+    }
+
+
+    void OnFDateChange(DateTime? value, string name, string format)
+    {
+       FInputDate = value ;
+    }
+
+    string DateTimeToBase64(DateTime dt)
+    {
+        var dbytes = System.Text.Encoding.UTF8.GetBytes(dt.ToString());
+        var dbased = Convert.ToBase64String(dbytes);
+        return dbased;
+    }
+
+    DateTime DateTimeFromBase64(string strBased)
+    {
+        var dbytes = System.Convert.FromBase64String(strBased);
+        var dstr = System.Text.Encoding.UTF8.GetString(dbytes);
+        return DateTime.Parse(dstr);
+    }
+
+    string GetDate()
+    {
+        return DateT.ToShortDateString();
+    }
+
+    string FormatAsTime(object value)
+    {
+        if (value is DateTime)
+        {
+            return ((DateTime)(value)).ToShortTimeString();
+        }
+        return "";
+    }
+
+    string FormatAsVal(object value)
+    {
+        if (value is float)
+        {
+            return $"{value}";
+        }
+        return "";
+    }
+}

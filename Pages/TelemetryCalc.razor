@@ -123,14 +123,17 @@
     {
         var startDate = DateTimeFromBase64(DateTStr) ;
         var endDate = DateTimeFromBase64(DateTEtr) ;
+      
         try
         {
             if(War4 == 0 )
             {
-               var tt = grpcClient.GetTelemetryServPeriodByObjKod(startDate,endDate,ObjKod);
+               var tt = grpcClient.GetTelemetryDataById((int)Id);
    
                if (tt != null && tt.Count() > 0)
                {
+                   startDate = tt.Select(tttt => tttt?.Period??DateTime.MinValue).Min(); 
+                   endDate = tt.Select(tttt => tttt?.Period??DateTime.MaxValue).Max(); 
                    HeaderStr = $"Телеметрия c {startDate.ToShortDateString()} {startDate.ToShortTimeString()} по {endDate.ToShortDateString()} {endDate.ToShortTimeString()} для объекта №{ObjKod}" ;
                    TeleMetr1Title = HeaderStr ;
                    Telemetries.AddRange(tt.OrderBy(ttt => ttt.Period)) ;

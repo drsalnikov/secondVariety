@@ -1,0 +1,81 @@
+@page "/anomaly"
+
+@using System 
+@using System.IO
+@using Microsoft.AspNetCore.Hosting
+@using System.Linq.Dynamic.Core
+@using SecondVariety.Models;
+@using Microsoft.EntityFrameworkCore
+@using System.Timers
+@inject IWebHostEnvironment Environment
+@inject NavigationManager nav
+@inject GrpcClientService grpcClient
+
+
+<h1>@HeaderStr</h1>
+ @foreach (var item in AnomalyList)
+ {
+    <div class="row gap-2">
+    
+          <DynamicComponent  @key="item.TelemetryCom"  Type="@item.TelmetryType" Parameters="@item.TelParams"  />   
+  
+    <!--
+  <DynamicComponent  @key="TelemetryCom"  Type="@TelmetryType" Parameters="@TelParams"  />    
+   -->
+    </div> 
+ }
+
+
+
+
+
+@code {
+  
+    public string HeaderStr {get;set;}   
+
+    List<ListAnomalyItem> AnomalyList {get; set;}
+
+    Type TelmetryType {get; set; } = typeof(SecondVariety.Shared.TelemetryComponent) ;
+    Dictionary<string,object> TelParams {get; set; } = new Dictionary<string, object> { { "Id",13} , {"ObjKod",5} } ;
+    SecondVariety.Shared.TelemetryComponent TelemetryCom {get; set; }     
+    protected override async Task OnInitializedAsync()
+    {
+      TelmetryType = typeof(SecondVariety.Shared.TelemetryComponent) ;
+      TelParams = new Dictionary<string, object> { { "Id",(long)13} , {"ObjKod",5} } ;
+      HeaderStr = @"Аномалии" ;
+      AnomalyList = new List<ListAnomalyItem>();
+      await base.OnInitializedAsync();
+      LoadObjectsTelemetry();
+    }
+
+
+    public async Task LoadObjectsTelemetry()
+    {
+        
+        var objs = grpcClient.GetObjects();
+        var aobjs = objs.Where( ooo => ooo.WarningType>0 && ooo.WarningType<4) ;
+        if(aobjs!=null&& objs.Count()>0)
+        {
+              var alst = aobjs.Select(ooo => new ListAnomalyItem { 
+                TelemetryCom = new TelemetryComponent() ,
+                TelmetryType = typeof(SecondVariety.Shared.TelemetryComponent) ,
+                TelParams = new Dictionary<string, object> { { "Id",(long)ooo.Id} , {"ObjKod",ooo.Kod} } 
+                 }).ToList();  
+                 AnomalyList.AddRange(alst) ; 
+        }
+        // TelemetryCom= new SecondVariety.Shared.TelemetryComponent() ;  
+        // await TelemetryCom.LoadObjectTelemetry();
+    }
+
+    private struct ListAnomalyItem
+    {
+        public Type TelmetryType {get; set; } 
+        public  Dictionary<string,object> TelParams {get; set; }  
+        public  SecondVariety.Shared.TelemetryComponent TelemetryCom {get; set; } 
+    }
+
+  
+
+
+ 
+}

@@ -195,10 +195,13 @@
     {
       if (!warning4)
       {
-        var tt = grpcClient.GetTelemetryServPeriodByObjKod(startDate, endDate, selected.Kod);
+       // var tt = grpcClient.GetTelemetryServPeriodByObjKod(startDate, endDate, selected.Kod);
+        var tt = grpcClient.GetTelemetryDataById(selected.Id);
 
         if (tt != null && tt.Count() > 0)
         {
+          startDate = tt.Select(tttt => tttt?.Period??DateTime.MinValue).Min(); 
+          endDate = tt.Select(tttt => tttt?.Period??DateTime.MaxValue).Max(); 
           HeaderStr = $"Телеметрия c {startDate.ToShortDateString()} {startDate.ToShortTimeString()} по {endDate.ToShortDateString()} {endDate.ToShortTimeString()} для объекта №{selected.Kod}";
           TeleMetr1Title = HeaderStr;
           Telemetries.AddRange(tt.OrderBy(ttt => ttt.Period));

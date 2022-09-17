@@ -99,16 +99,15 @@
   private int count;
   private Object? selected;
 
+  private bool isLoading = false;
+
   public DateTime DateT { get; set; }
   public string HeaderStr {get; set; }
   public string TeleMetr1Title {get; set; }
   public string TeleMetr2Title {get; set; }
 
-  private bool isLoading = false;
-
   public bool War4Visible {get; set; } = false ;
   public bool WarVisible {get; set; } = false;
-
 
   List<Models.Telemetry> Telemetries  {get;set;} = new List<Models.Telemetry>();
   List<Models.Telemetry> Telemetries1 {get;set;} = new List<Models.Telemetry>();

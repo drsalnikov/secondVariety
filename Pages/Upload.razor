@@ -1,0 +1,212 @@
+﻿@page "/upload"
+
+@using System
+@using System.IO
+@using System.Timers
+@using System.Linq.Dynamic.Core
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.EntityFrameworkCore
+@using SecondVariety.Models
+@using Object = SecondVariety.Models.Object
+
+@inject NavigationManager nav
+@inject GrpcClientService grpcClient
+@inject NotificationService NotificationService
+
+
+<h3>Загрузка</h3>
+
+<div class="row gap-3">
+  <RadzenFieldset Text="Загрузка файла телеметрии" class="gap-3">
+    <div class="row gap-3 mb-3">
+      <div class="col-1">
+        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Объект</RadzenText>
+      </div>
+      <div class="col">
+        <RadzenDropDownDataGrid Name="Object"
+                                Style="width: 100%"
+                                TValue="int"
+                                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                AllowFiltering="true"
+                                AllowClear="true"
+                                Data=@objects
+                                AllowColumnResize="true"
+                                Count="@count"
+                                Change="@OnChange"
+                                TextProperty="Name"
+                                ValueProperty="Id"
+                                PageSize="20"
+                                Placeholder="Выберите объект"
+                                SearchText="Поиск"
+                                AllowFilteringByAllStringColumns="true">
+          <Columns>
+            <RadzenDropDownDataGridColumn Property="Kod" Title="Код" />
+            <RadzenDropDownDataGridColumn Property="Name" Title="Имя" />
+          </Columns>
+        </RadzenDropDownDataGrid>
+        <RadzenRequiredValidator Component="Object" Text="Для загрузки файла телеметрии выбор объекта является обязательным" />
+      </div>
+    </div>
+
+    <div class="row gap-3 mb-3">
+      <div class="col-1">
+        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Период</RadzenText>
+      </div>
+      <div class="col">
+        <RadzenDatePicker TValue="DateTime?"
+          ShowTime="true" ShowSeconds="true" HoursStep="1.5" MinutesStep="5" SecondsStep="10"
+          @bind-Value="@FInputDate"
+          DateFormat="dd.MM.yyyy HH:mm" Class="w-100" />
+      </div>
+    </div>
+    <div class="row gap-3 mb-3">
+      <div class="col-1">
+        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Тип</RadzenText>
+      </div>
+      <div class="col">
+        <RadzenNumeric Step="any" TValue="int" @bind-Value="@TelemetrUpType" Class="w-100" />
+      </div>
+    </div>
+    <div class="row gap-3 mb-3">
+      <div class="col-1">
+        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Данные</RadzenText>
+      </div>
+      <div class="col">
+        <InputFile class="form-control" OnChange="@LoadFiles" />
+      </div>
+    </div>
+    <div class="row gap-3" >
+      <div class="col">
+        <RadzenProgressBar Visible=@isLoading Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+      </div>
+    </div>
+  </RadzenFieldset>
+</div>
+
+<div class="row gap-3">
+  <RadzenFieldset Text="Загрузка файла заявки" class="gap-3">
+    <div class="row gap-3 mb-3">
+      <div class="col-1">
+        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Заявка</RadzenText>
+      </div>
+      <div class="col">
+        <InputFile class="form-control" />
+      </div>
+    </div>
+    <div class="row gap-3">
+      <div class="col">
+        <RadzenProgressBar Visible=false Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+      </div>
+    </div>
+  </RadzenFieldset>
+</div>
+
+
+@code {
+  public string FileName { get; set; } = "";
+  public long? FileSize { get; set; } = 0;
+  int TelemetrUpType = 0;
+  DateTime? FInputDate = DateTime.Now;
+  
+  private IEnumerable<Object> objects = Enumerable.Empty<Object>();
+  private int count;
+  private Object? selected;
+
+  private Timer PrTimer;
+  private bool isLoading = false;
+
+  protected override async Task OnInitializedAsync()
+  {
+    var objs = grpcClient.GetObjects();
+    objects = objs.OrderBy(o => o.Kod);
+    count = objects.Count();
+    await Task.Yield();
+  }
+
+  void OnChange(object args)
+  {
+    if (args is int)
+    {
+      int id = Convert.ToInt32(args);
+      selected = objects.FirstOrDefault(o => o.Id == id);
+
+      ShowMessage(String.Format("Выбран {0}", selected?.Name));
+    }
+  }
+
+  void ShowMessage(string text)
+  {
+    var message = new NotificationMessage
+      {
+        Severity = NotificationSeverity.Success,
+        Summary = "Сообщение",
+        Detail = String.Format("{0}", text),
+        Duration = 10000
+      };
+
+    NotificationService.Notify(message);
+  }
+
+  void ShowMessageError(string text)
+  {
+    var message = new NotificationMessage
+    {
+      Severity = NotificationSeverity.Error,
+      Summary = "Ошибка",
+      Detail = String.Format("{0}", text),
+      Duration = 10000
+    };
+
+    NotificationService.Notify(message);
+  }
+
+  private async Task LoadFiles(InputFileChangeEventArgs e)
+  {
+    var f = e.File;
+
+    Task<(long?, long?)> upltsk = null;
+
+    if (selected == null)
+    {
+      return;
+    }
+      
+    if (TelemetrUpType < 0) 
+    {
+      TelemetrUpType = 0;
+    }
+      
+    try
+    {
+      await using MemoryStream strms = new MemoryStream();
+      await f.OpenReadStream(20971520).CopyToAsync(strms);
+      byte[] bts = strms.ToArray();
+      upltsk = grpcClient.UploadTelemetry(selected.Kod, TelemetrUpType, FInputDate ?? DateTime.Now, bts);
+
+    }
+    catch (Exception exp)
+    {
+      var msg = exp.Message;
+      return;
+    }
+    if (upltsk != null && !upltsk.IsCanceled && !upltsk.IsCompleted && upltsk.Status != TaskStatus.Faulted && upltsk.Status != TaskStatus.RanToCompletion)
+    {
+      PrTimer = new Timer(300);
+      PrTimer.AutoReset = true;
+      PrTimer.Elapsed += (source, e) =>
+      {
+        if (upltsk.IsCompleted && upltsk.Status == TaskStatus.RanToCompletion)
+        {
+          PrTimer.Enabled = false;
+          grpcClient.TelemetryTrainingObj(selected.Kod);
+
+        }
+        else if (upltsk.IsCanceled)
+        {
+          nav.NavigateTo(@"/objects");
+        }
+      };
+      PrTimer.Enabled = true;
+    }
+  }
+}

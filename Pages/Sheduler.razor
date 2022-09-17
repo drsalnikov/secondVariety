@@ -3,6 +3,7 @@
 @using System.ComponentModel.DataAnnotations
 @using SecondVariety.Models
 @using Object = SecondVariety.Models.Object
+@using System.Drawing
 
 @inject NavigationManager nav
 @inject GrpcClientService grpcClient
@@ -13,19 +14,21 @@
     <RadzenFieldset Text="План работ" class="gap-3">
       <RadzenScheduler 
           @ref=@scheduler
-          style="height: 900px;"
+          Style="height:1300px"
           SlotRender=@OnSlotRender  
-          TItem="Request" 
+          TItem="RequestDTO" 
           Data=@requests
           StartProperty="DateFromFakt"
           EndProperty="DateToFakt"
-          TextProperty="Comment"
-          SelectedIndex="3"
-          SlotSelect=@OnSlotSelect 
-          AppointmentSelect=@OnAppointmentSelect 
-          AppointmentRender=@OnAppointmentRender>
-        <RadzenWeekView />
-        <RadzenMonthView />
+          TextProperty="NameObject"
+          SelectedIndex="0"
+          AppointmentRender=@OnAppointmentRender
+          TodayText="Сегодня"
+          
+          Culture="@culture"
+      >
+
+        <RadzenMonthView Text="" MoreText="еще..."/>
       </RadzenScheduler>
     </RadzenFieldset>
   </div>
@@ -35,30 +38,38 @@
 @code {
   [CascadingParameter]
   private Task<AuthenticationState> authenticationStateTask { get; set; }
+  System.Globalization.CultureInfo culture = new System.Globalization.CultureInfo("ru-RU");
 
   private System.Security.Claims.ClaimsPrincipal? User;
-  RadzenScheduler<Request>? scheduler;
+  RadzenScheduler<RequestDTO>? scheduler;
   EventConsole console;
   Dictionary<DateTime, string> events = new Dictionary<DateTime, string>();
-  IList<Request> requests;
-
-  /*
-  *     IList<Appointment> appointments = new List<Appointment>
-       {
-       new Appointment { Start = DateTime.Today.AddDays(-2), End = DateTime.Today.AddDays(-2), Text = "Birthday" },
-       new Appointment { Start = DateTime.Today.AddDays(-11), End = DateTime.Today.AddDays(-10), Text = "Day off" },
-       new Appointment { Start = DateTime.Today.AddDays(-10), End = DateTime.Today.AddDays(-8), Text = "Work from home" },
-       new Appointment { Start = DateTime.Today.AddHours(10), End = DateTime.Today.AddHours(12), Text = "Online meeting" },
-       new Appointment { Start = DateTime.Today.AddHours(10), End = DateTime.Today.AddHours(13), Text = "Skype call" },
-       new Appointment { Start = DateTime.Today.AddHours(14), End = DateTime.Today.AddHours(14).AddMinutes(30), Text = "Dentist appointment" },
-       new Appointment { Start = DateTime.Today.AddDays(1), End = DateTime.Today.AddDays(12), Text = "Vacation" },
-  };
-  */
+  IList<RequestDTO> requests;
 
   protected override async Task OnInitializedAsync()
   {
     await base.OnInitializedAsync();
-    requests = grpcClient.GetRequests().ToList();
+
+    var reqs = grpcClient.GetRequests();
+    var objs = grpcClient.GetObjects();
+
+    requests = (from r in reqs
+                join o in objs on r.KodObject equals o.Id
+                select new RequestDTO
+                    {
+                      Num = r.Num,
+                      Data = r.Data,
+                      KodObject = r.KodObject,
+                      NameObject = String.Format("Заявка {0} по объекту {1}", r.Num, o.Name),
+                      DateFrom = r.DateFrom,
+                      DateTo = r.DateTo,
+                      DateFromFakt = r.DateFromFakt,
+                      DateToFakt = r.DateToFakt,
+                      Status = (Models.StatusTypes)(r.Status ?? 0),
+                      Id = r.Id
+                    })
+                .OrderBy(o => o.Num)
+                .ToList();
   }
 
   void OnSlotRender(SchedulerSlotRenderEventArgs args)
@@ -76,39 +87,16 @@
     }
   }
 
-  async Task OnSlotSelect(SchedulerSlotSelectEventArgs args)
+
+
+  void OnAppointmentRender(SchedulerAppointmentRenderEventArgs<RequestDTO> args)
   {
+    // Never call StateHasChanged in AppointmentRender - would lead to infinite loop
+    Random rnd = new Random();
+    //Color randomColor = Color.FromArgb(rnd.Next(256), rnd.Next(256), rnd.Next(256));
+    string color = String.Format("#{0:X6}", rnd.Next(0x1000000) & 0x7F7F7F);
 
-    Request data = await dialogService.OpenAsync<AddNewRequest>("Add Appointment",
-        new Dictionary<string, object> { { "DateFromFakt", args.Start }, { "DateToFakt", args.End } });
-
-    User = (await authenticationStateTask).User;
-
-    if (!User.IsInRole("Administrator") && !User.IsInRole("Manager"))
-    {
-      return;
-    }
-
-    if (data != null)
-    {
-      requests.Add(data);
-      grpcClient.AddRequest(data);
-
-      await scheduler.Reload();
-    }
-  }
-
-  async Task OnAppointmentSelect(SchedulerAppointmentSelectEventArgs<Request> args)
-  {
-
-    await dialogService.OpenAsync<EditRequest>("Edit Appointment", new Dictionary<string, object> { { "Request", args.Data } });
-
-    await scheduler.Reload();
-  }
-
-  void OnAppointmentRender(SchedulerAppointmentRenderEventArgs<Request> args)
-    {
-        // Never call StateHasChanged in AppointmentRender - would lead to infinite loop
+    args.Attributes["style"] = String.Format("background:{0}", color);
 
     }
 }

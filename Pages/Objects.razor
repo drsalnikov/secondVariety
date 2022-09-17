@@ -46,7 +46,7 @@
         >
         <Columns>
             <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="Kod" Title="Код" Width="25px" TextAlign="TextAlign.Center" />
-            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="Name" Title="Наименование" Width="75px" />
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="Name" Title="Наименование" Width="150px" />
             <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="LastTo" Title="Дата последнего ТО"  FormatString="{0:d}" Width="75px"/>
             <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="NextTo" Title="Дата следующего ТО"  FormatString="{0:d}" Width="75px"/>
             <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="DateFrom" Title="Начальная дата"  FormatString="{0:d}" Width="75px"/>
@@ -54,7 +54,7 @@
             <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="PlanYear" Title="Планируемая наработка в год" Width="70px" />
             <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="TekNar" Title="Текущая наработка" Width="55px" />
             <RadzenDataGridColumn TItem="SecondVariety.Models.Object" Property="SredNar" Title="Среднедневная наработка" Width="70px" />
-            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" TextAlign="TextAlign.Center" Property="WarningType" Title="Предупреждение" Width="50px" >
+            <RadzenDataGridColumn TItem="SecondVariety.Models.Object" TextAlign="TextAlign.Center" Property="WarningType" Title="Статус" Width="50px" >
               <Template Context="cont">
                 <RadzenIcon Icon=@GetIcon(cont.WarningType) Style=@GetColor(cont.WarningType) />
               </Template>

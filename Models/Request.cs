@@ -37,7 +37,7 @@ namespace SecondVariety.Models
 
     public enum StatusTypes : int
     {
-      [Display(Description = "Закрыта")]
+      [Display(Description = "Закрыта", Name = "asda ")]
       Closed,
       [Display(Description = "Согласована")]
       Agreed,

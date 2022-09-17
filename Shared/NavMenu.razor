@@ -1,26 +1,15 @@
 ﻿
 <RadzenMenu>
-  <RadzenMenuItem Text="Ремонты" Icon="build">
-    <RadzenMenuItem class="text-decoration-none" Text="Объекты" Path="objects" Icon="build"></RadzenMenuItem>
-    <AuthorizeView Roles="Administrator,Manager">
-      <RadzenPanelMenuItem class="text-decoration-none" Text="Заявки" Path="requests" Icon="account_circle"></RadzenPanelMenuItem>
-    </AuthorizeView>
-  </RadzenMenuItem>
+  <RadzenMenuItem class="text-decoration-none" Text="Объекты" Path="objects" Icon="build"></RadzenMenuItem>
+  <RadzenPanelMenuItem class="text-decoration-none" Text="Заявки" Path="requests" Icon="account_circle"></RadzenPanelMenuItem>
+  <RadzenMenuItem class="text-decoration-none" Text="Календарь" Path="scheduler" Icon="date_range"></RadzenMenuItem>
+  <RadzenMenuItem class="text-decoration-none" Text="Аналитика по объекту" Path="telemetry" Icon="assessment"></RadzenMenuItem>
   <AuthorizeView Roles="Administrator,Manager">
-    <RadzenMenuItem Text="Аналитика" Icon="announcement">
-      <RadzenMenuItem class="text-decoration-none" Text="Календарь" Path="scheduler" Icon="date_range"></RadzenMenuItem>
-      <RadzenMenuItem class="text-decoration-none" Text="Телеметрия по объекту" Path="telemetry" Icon="assessment"></RadzenMenuItem>
-      <RadzenMenuItem class="text-decoration-none" Text="Настройки" Path="settings" Icon="assignment"></RadzenMenuItem>
-    </RadzenMenuItem>
-  </AuthorizeView>
-  <AuthorizeView Roles="Administrator,Manager">
-    <RadzenMenuItem Text="Данные" Icon="save">
-      <RadzenMenuItem class="text-decoration-none" Text="Загрузить телеметрию" Path="" Icon="build"></RadzenMenuItem>
-      <RadzenMenuItem class="text-decoration-none" Text="Загрузить Заявку" Path="" Icon="account_circle"></RadzenMenuItem>
-    </RadzenMenuItem>
+    <RadzenMenuItem class="text-decoration-none" Text="Настройки" Path="settings" Icon="assignment"></RadzenMenuItem>
+    <RadzenMenuItem class="text-decoration-none" Text="Загрузить Данные" Path="upload" Icon="save"></RadzenMenuItem>
   </AuthorizeView>
 </RadzenMenu>
 
 @code {
-
+  // announcement
 }

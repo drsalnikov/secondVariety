@@ -12,14 +12,14 @@
   <div class="row gap-3">
     <div class="col">
       <RadzenFieldset Text="Действия" class="gap-3">
-        <div class="row gap-3">
-          <div class="col">
-            <RadzenButton Click=@TraningAll Disabled=@isLoading Text ="Обучить все объекты" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
+        <div class="row">
+          <div class="col-4">
+            <RadzenButton Click=@TraningAll Disabled=@isLoading Text = "Обучить все объекты" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
           </div>
         </div>
-        <div class="row gap-3">
-          <div class="col">
-            <RadzenButton Click=@CheckAll Disabled=@isLoading Text ="Проверка всех объектов" Icon="save" ButtonStyle="ButtonStyle.Secondary" />
+        <div class="row">
+          <div class="col-4">
+            <RadzenButton Click=@CheckAll Disabled=@isLoading Text = "Проверка всех объектов" Icon="save" ButtonStyle="ButtonStyle.Secondary" />
           </div>
         </div>
       </RadzenFieldset>
@@ -27,7 +27,9 @@
   </div>
   <div class="row gap-3">
     <div class="col">
-      <RadzenProgressBar Visible=@isLoading Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+      <RadzenFieldset Visible=@isLoading Text="Загрузка" class="gap-3">
+        <RadzenProgressBar Visible=@isLoading Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+      </RadzenFieldset>
     </div>
   </div>
 </AuthorizeView>

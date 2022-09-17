@@ -33,11 +33,9 @@
                 <RadzenLabel Text="Статус" />
             </div>
             <div class="col">
-              <RadzenDropDown Change="@OnStatusChange" Context="status" @bind-Value="ReqStatus" Data="@(Enum.GetValues(typeof(StatusTypes)))" > 
-           <!--   <RadzenDropDown Context="status" @bind-Value="(newRequest.Status??0)" Data="@(Enum.GetValues(typeof(StatusTypes)))" >   -->
-            <!--    <Template>
-                    @Enum.GetName(status)
-                </Template>  -->
+              <RadzenDropDown Change="@OnStatusChange"
+                @bind-Value="ReqStatus" 
+                Data="@(Enum.GetValues(typeof(StatusTypes)))" > 
               </RadzenDropDown>
             </div>
           </div>

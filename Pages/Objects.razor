@@ -189,14 +189,14 @@
               new ContextMenuItem(){ Text = "Телеметрия", Value = 1 },             
               new ContextMenuItem(){ Text = "Редактировать", Value = 2 },
               new ContextMenuItem(){ Text = "Удалить", Value = 3 },
-              //new ContextMenuItem(){ Text = "Обучить", Value = 4 },
-              //new ContextMenuItem(){ Text = "Проверить обучение", Value = 5 }
+              new ContextMenuItem(){ Text = "Обучить", Value = 4 },
+              new ContextMenuItem(){ Text = "Проверить обучение", Value = 5 }
           }, 
             (e) => { 
               switch (e.Value)
               {
                 case 1:
-                  nav.NavigateTo($"/telemetrycalc/{args.Data.Kod}/{startBased}/{endBased}/{(warning4?1:0)}/{args.Data.Kod}", false);
+                  nav.NavigateTo($"/telemetrycalc/{args.Data.Id}/{startBased}/{endBased}/{(warning4?1:0)}/{args.Data.Kod}", false);
                   ContextMenuService.Close() ;
                   break ;
                 case 2:
@@ -208,10 +208,11 @@
                   ContextMenuService.Close();
                   break;
                 case 4:
-                  ContextMenuService.Close();
+                  ContextMenuService.Close() ;
+                  grpcClient.TelemetryTrainingObj(args.Data.Kod) ;
                   break ;
                 case 5:                
-                  //grpcClient.CheckingTrainingObj(args.Data.Kod);
+                  grpcClient.CheckingTrainingObj(args.Data.Kod) ;
                   ContextMenuService.Close() ;
                   break;  
 

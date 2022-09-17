@@ -78,9 +78,9 @@ namespace SecondVariety.Areas.Identity.Pages.Account.Manage
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
             [Required]
-            [StringLength(7, ErrorMessage = "Код {0} должен быть минимум {2} и не более {1} символов.", MinimumLength = 6)]
+            [StringLength(7, ErrorMessage = "РљРѕРґ {0} РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РјРёРЅРёРјСѓРј {2} Рё РЅРµ Р±РѕР»РµРµ {1} СЃРёРјРІРѕР»РѕРІ.", MinimumLength = 6)]
             [DataType(DataType.Text)]
-            [Display(Name = "Проверочный код")]
+            [Display(Name = "РџСЂРѕРІРµСЂРѕС‡РЅС‹Р№ РєРѕРґ")]
             public string Code { get; set; }
         }
 

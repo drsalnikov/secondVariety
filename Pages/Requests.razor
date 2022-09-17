@@ -19,29 +19,39 @@
   </div>
   <div class="row gap-3">
     <RadzenDataGrid 
-              AllowFiltering="true" 
-              AllowSorting="true" 
-              PageSize="10" 
-              ShowPagingSummary="true"
-              Data="@myRequests" 
-              TItem="RequestDTO" 
-              ColumnWidth="480px" 
-              IsLoading="@isLoading"
-              SelectionMode="DataGridSelectionMode.Single" 
-              @bind-Value=@selected 
-              CellContextMenu="@OnCellContextMenu"
-              >
-              <Columns>
-                  <RadzenDataGridColumn TItem="RequestDTO" Property="Num" Title="Номер" Width="75px" TextAlign="TextAlign.Center" />
-                  <RadzenDataGridColumn TItem="RequestDTO" Property="Data" Title="Дата" FormatString="{0:d}" Width="150px" />
-                  <RadzenDataGridColumn TItem="RequestDTO" Property="KodObject" Title="Код объекта" Width="75px"/>
-                  <RadzenDataGridColumn TItem="RequestDTO" Property="NameObject" Title="Наименование объекта" Width="150px"/>
-                  <RadzenDataGridColumn TItem="RequestDTO" Property="DateFrom" Title="Дата начала работ(план)" FormatString="{0:d}" Width="150px"/>
-                  <RadzenDataGridColumn TItem="RequestDTO" Property="DateTo" Title="Дата окончания работ(план)" FormatString="{0:d}" Width="150px"/>
-                  <RadzenDataGridColumn TItem="RequestDTO" Property="DateFromFakt" Title="Дата начала работ(факт)" FormatString="{0:d}" Width="150px"/>
-                  <RadzenDataGridColumn TItem="RequestDTO" Property="DateToFakt" Title="Дата окончания работ(факт)" FormatString="{0:d}" Width="150px"/>
-                  <RadzenDataGridColumn TItem="RequestDTO" Property="Status" Title="Статус" Width="75px" />
-              </Columns>
+      AllowFiltering="true" 
+      AllowSorting="true" 
+      PageSize="10" 
+      ShowPagingSummary="true"
+      Data="@myRequests" 
+      TItem="RequestDTO"
+      EmptyText="Нет данных по объектам"
+      AllColumnsText="Все колонки"
+      ColumnsShowingText="Колонок"
+      DoesNotContainText="Нет данных по объектам"
+      PagingSummaryFormat="Страница {0} из {1}"
+
+      IsLoading="@isLoading"
+      SelectionMode="DataGridSelectionMode.Single"
+      PagerHorizontalAlign="HorizontalAlign.Center"
+      @bind-Value=@selected 
+      CellContextMenu="@OnCellContextMenu"
+      >
+      <Columns>
+          <RadzenDataGridColumn TItem="RequestDTO" Property="Num" Title="Номер" Width="75px" TextAlign="TextAlign.Center" />
+          <RadzenDataGridColumn TItem="RequestDTO" Property="Data" Title="Дата" FormatString="{0:d}" Width="150px" />
+          <RadzenDataGridColumn TItem="RequestDTO" Property="KodObject" Title="Код объекта" Width="50px"/>
+          <RadzenDataGridColumn TItem="RequestDTO" Property="NameObject" Title="Наименование объекта" Width="150px"/>
+          <RadzenDataGridColumn TItem="RequestDTO" Property="DateFrom" Title="Дата начала работ(план)" FormatString="{0:d}" Width="150px"/>
+          <RadzenDataGridColumn TItem="RequestDTO" Property="DateTo" Title="Дата окончания работ(план)" FormatString="{0:d}" Width="150px"/>
+          <RadzenDataGridColumn TItem="RequestDTO" Property="DateFromFakt" Title="Дата начала работ(факт)" FormatString="{0:d}" Width="150px"/>
+          <RadzenDataGridColumn TItem="RequestDTO" Property="DateToFakt" Title="Дата окончания работ(факт)" FormatString="{0:d}" Width="150px"/>
+          <RadzenDataGridColumn TItem="RequestDTO" Property="Status" Title="Статус" Width="120px" >
+            <Template Context="status">
+              <p>@GetDisplayName(status)</p>
+            </Template>
+          </RadzenDataGridColumn>
+      </Columns>
     </RadzenDataGrid>
   </div>
   <div class="row gap-3">
@@ -74,7 +84,7 @@
     await Task.Yield();
     User = (await authenticationStateTask).User;
     if(!User.IsInRole("Administrator")&&!User.IsInRole("Manager"))
-        return ;
+      return ;
 
     var reqs = grpcClient.GetRequests() ;
     var objs = grpcClient.GetObjects() ;
@@ -160,5 +170,10 @@
             //console.Log($"e: {e.Value}. args: {args.Data.Num}."); 
           }
         );
+  }
+
+  string GetDisplayName(RequestDTO r)
+  {
+    return r.Status.GetDisplayDescription();
   }
 }

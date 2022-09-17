@@ -9,7 +9,7 @@
 @inject GrpcClientService grpcClient
 @inject NotificationService NotificationService
 
-<h1>Рассчёт телеметрии по объекту</h1>
+<h1>Анализ телеметрии по объекту</h1>
 
 <div class="row gap-3">
   <RadzenFieldset Text="Действия" class="gap-3">
@@ -45,8 +45,8 @@
 </div>
 
 <div class="row gap-3">
-  <RadzenFieldset Text="Описание" class="gap-3">
-    <p>Описание сценария, иначе не понятно, что за график.</p>
+  <RadzenFieldset Visible=@(selected != null) Text="Описание" class="gap-3">
+    <p>Описание выявленного сценария @selected?.WarningType. </p>
   </RadzenFieldset>
 </div>
 

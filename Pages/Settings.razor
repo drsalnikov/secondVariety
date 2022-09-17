@@ -7,19 +7,30 @@
 @inject ContextMenuService ContextMenuService
 @inject GrpcClientService grpcClient 
 
-  <h1>Настройки</h1>
-  <AuthorizeView Roles="Administrator">
-    <div class="row gap-3">
-      <div class="col">
-        <RadzenFieldset Text="Действия" class="gap-3">
-          <RadzenButton Click=@TraningAll Text="Обучить все объекты" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
-          <RadzenButton Click=@CheckAll Text="Проверка всех объектов" Icon="save" ButtonStyle="ButtonStyle.Secondary" />
-        </RadzenFieldset>
-      </div>
+<h1>Настройки</h1>
+<AuthorizeView Roles="Administrator">
+  <div class="row gap-3">
+    <div class="col">
+      <RadzenFieldset Text="Действия" class="gap-3">
+        <div class="row gap-3">
+          <div class="col">
+            <RadzenButton Click=@TraningAll Disabled=@isLoading Text ="Обучить все объекты" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
+          </div>
+        </div>
+        <div class="row gap-3">
+          <div class="col">
+            <RadzenButton Click=@CheckAll Disabled=@isLoading Text ="Проверка всех объектов" Icon="save" ButtonStyle="ButtonStyle.Secondary" />
+          </div>
+        </div>
+      </RadzenFieldset>
     </div>
-
-
-  </AuthorizeView>
+  </div>
+  <div class="row gap-3">
+    <div class="col">
+      <RadzenProgressBar Visible=@isLoading Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    </div>
+  </div>
+</AuthorizeView>
       
 @code {
   [CascadingParameter]
@@ -46,21 +57,29 @@
     {
       return;
     }
-    //var objs = grpcClient.GetObjects() ;
-    //objects = objs.OrderBy(o => o.Kod) ;
-    //.OrderBy(o => o.Kod); //db1context.Objects.OrderBy(o => o.Kod).AsQueryable();
-    //count = objects.Count();
+    var objs = grpcClient.GetObjects() ;
+    objects = objs.OrderBy(o => o.Kod) ;
     isLoading = false;
   }
 
-  void TraningAll()
+  async Task TraningAll()
   {
-    //grpcClient.TelemetryTrainingObj(args.Data.Kod);
+    isLoading = true;
+    foreach (var to in objects)
+    {
+      await grpcClient.TelemetryTrainingObj(to.Kod);
+    }
+    isLoading = false;
   }
 
-  void CheckAll()
+  async Task CheckAll()
   {
-
+    isLoading = true;
+    foreach (var to in objects)
+    {
+      await grpcClient.CheckingTrainingObj(to.Kod);
+    }
+    isLoading = false;
   }
 
   void OnCellContextMenu(DataGridCellMouseEventArgs<SecondVariety.Models.Object> args)

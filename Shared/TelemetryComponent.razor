@@ -1,0 +1,144 @@
+
+@using System.Linq.Dynamic.Core
+@using Microsoft.EntityFrameworkCore
+@using SecondVariety.Models
+
+
+@inject NavigationManager nav
+@inject GrpcClientService grpcClient
+@inject NotificationService NotificationService
+
+
+<div class="row gap-2">
+      <RadzenChart>
+          <RadzenLegend Position="LegendPosition.Top" />
+        <RadzenLineSeries Smooth="true" Data="@Telemetries" CategoryProperty="Period" Title="@TeleMetr1Title"
+            ValueProperty="Value" RenderingOrder="1">
+            <RadzenSeriesTrendLine Visible="true" Stroke="red" LineType="LineType.Solid" />
+        </RadzenLineSeries>
+        <RadzenCategoryAxis Padding="20" Formatter="@FormatAsTime" />
+        <RadzenValueAxis Formatter="@FormatAsVal">
+            <RadzenGridLines Visible="true" />
+            <RadzenAxisTitle Text="Значение" />
+        </RadzenValueAxis>
+    </RadzenChart>
+</div>
+
+
+@code {
+    [Parameter] public long Id { get; set; }
+    [Parameter] public int ObjKod { get; set; }
+    public DateTime DateT { get; set; }
+    public string HeaderStr {get;set;}
+    public string TeleMetr1Title {get;set ;}
+
+    public bool War4Visible {get;set;} = false ;
+    public bool FInputVisible {get;set;} = false ;
+    public string  FileName {get;set;} = "" ;
+    public long?  FileSize {get;set;} = 0 ;
+    
+    public bool NoTelemetryData {get;set;} = true ;
+
+    public string TeleMetr2Title {get;set ;}
+
+    public string ProgressStyle {get;set;} = "visibility:hidden;"; 
+    public string ProgressText {get;set;} = " " ;
+    private Timer PrTimer;
+
+
+    public string FInputStyle  {get;set;} = "visibility:hidden;"; 
+    List<Models.Telemetry> Telemetries  {get;set;} = new List<Models.Telemetry>() ;
+    List<Models.Telemetry> Telemetries1 {get;set;} = new List<Models.Telemetry>() ;   
+
+    DateTime? FInputDate = DateTime.Now;
+
+    int TelemetrUpType = 0 ;
+  
+    protected override async Task OnInitializedAsync()
+    {
+      await base.OnInitializedAsync();
+      await LoadObjectTelemetry();
+    }
+
+    public async Task LoadObjectTelemetry()
+    {
+      
+      
+        try
+        {
+           
+               var tt = grpcClient.GetTelemetryDataById((int)Id);
+   
+               if (tt != null && tt.Count() > 0)
+               {
+                   var startDate = tt.Select(tttt => tttt?.Period??DateTime.MinValue).Min(); 
+                   var endDate = tt.Select(tttt => tttt?.Period??DateTime.MaxValue).Max(); 
+                   HeaderStr = $"Аномалия {startDate.ToShortDateString()} {startDate.ToShortTimeString()} по {endDate.ToShortDateString()} {endDate.ToShortTimeString()} для объекта №{ObjKod}" ;
+                   TeleMetr1Title = HeaderStr ;
+                   Telemetries.AddRange(tt.OrderBy(ttt => ttt.Period)) ;
+                    Telemetries1.Add(new Models.Telemetry { Period = DateTime.Now , Value = 0 }) ;
+                   return;
+               }
+            
+        }
+        catch { }
+
+        Telemetries1.Add(new Models.Telemetry { Period = DateTime.Now , Value = 0 }) ;
+        Telemetries.Add(new Models.Telemetry { Period = DateTime.Now , Value = 0 }) ;
+        HeaderStr = $"Нет данных телеметрии для объекта №{ObjKod}" ; 
+        NoTelemetryData = true ;
+        FInputVisible = true;
+        TeleMetr1Title = HeaderStr ;   
+         FInputStyle = "visibility:visible;"; 
+    }
+
+    void OnTypeChange(dynamic value, string name)
+    {
+        if(value is int && value>-1) 
+                TelemetrUpType = (int)value ;
+    }
+
+
+
+    void OnFDateChange(DateTime? value, string name, string format)
+    {
+       FInputDate = value ;
+    }
+
+    DateTime DateTimeFromBase64(string strBased)
+    {
+        var dbytes = System.Convert.FromBase64String(strBased);
+        var dstr = System.Text.Encoding.UTF8.GetString(dbytes);
+        return DateTime.Parse(dstr);
+    }
+
+
+  string DateTimeToBase64(DateTime dt)
+  {
+     var dbytes = System.Text.Encoding.UTF8.GetBytes(dt.ToString()) ;
+     var dbased = Convert.ToBase64String(dbytes); 
+     return dbased ;
+  }
+    string GetDate()
+    {
+        return DateT.ToShortDateString();
+    }
+
+    string FormatAsTime(object value)
+    {
+        if (value is DateTime)
+        {
+            return ((DateTime)(value)).ToShortTimeString();
+        }
+        return "";
+    }
+
+    string FormatAsVal(object value)
+    {
+        if (value is float)
+        {
+            return $"{value}";
+        }
+        return "";
+    }
+}

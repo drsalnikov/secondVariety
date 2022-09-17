@@ -4,18 +4,26 @@ using Microsoft.AspNetCore;
 using Google.Protobuf.WellKnownTypes;
 using SecondVariety.Models;
 using Grpc.Core;
+using System.Diagnostics ;
 namespace SecondVariety
 {
 
   public class GrpcClientService
   {
-
-    public GrpcClientService()
+    private readonly ILogger<GrpcClientService> _logger;
+    public GrpcClientService(ILogger<GrpcClientService> logger)
     {
+      _logger = logger;
       var builder = WebApplication.CreateBuilder();
       clientChannelPath = builder.Configuration["GrpcChannels:SecondVariety"];
       jwtToken = builder.Configuration["JWTBearer:Token"];
+      _logger.LogInformation($"Created GrpcClientService. StackTrace: {Environment.StackTrace}");
     }
+
+    //public GrpcClientService()
+    //{
+    //  
+    //}
 
     public IEnumerable<Models.Object> GetObjects()
     {
@@ -301,6 +309,7 @@ namespace SecondVariety
       catch { }
       return tlmts;
     }
+    /*
     public IEnumerable<Models.Telemetry> GetTelemetryServPeriodByObjKod(DateTime start, DateTime end, int objKod)
     {
       using var channel = GrpcChannel.ForAddress(clientChannelPath);
@@ -319,101 +328,145 @@ namespace SecondVariety
       }
       catch { }
       return tlmts ;
-    }
+    }*/
 
-   //return count records writed to db and total time
-   //on error return (null,null)
-    public async Task<(long?,long?)> UploadTelemetry(int oKod,int tType,DateTime dt,byte[] fInWitsmlFile)
+    public IEnumerable<Models.Telemetry> GetTelemetryDataById(int Id)
     {
+      var retTelemes = new List<Models.Telemetry>();
+      _logger.LogInformation("GetTelemetryDataById");
+      
+      try
+      {
+
         using var channel = GrpcChannel.ForAddress(clientChannelPath);
-        var telemetryclient = new TelemetryServ.TelemetryServClient(channel);
-        var fbytes0 = fInWitsmlFile;
-        var ams1 = new MemoryStream();
-        
-        try
+        var gobclient = new ObjectsServ.ObjectsServClient(channel);
+        var obj = gobclient.GetById(new GObjectId { Id = Id }, GetMetadata());
+
+        if (obj != null)
         {
-        using(System.IO.Compression.DeflateStream dstream = new System.IO.Compression.DeflateStream(ams1, System.IO.Compression.CompressionLevel.Optimal))
-        {
-             await dstream.WriteAsync(fbytes0,0,fbytes0.Count()) ;   
+          var errorPeriod = obj.ErrorPeriod;
+          var offset = TimeZoneInfo.Local.GetUtcOffset(DateTime.UtcNow);
+          var warningDate = obj.WarningTime.ToDateTime();
+          var stDt = warningDate.AddMinutes(-1 * errorPeriod / 2);//Add(offset) ;
+          var enDt = warningDate.AddMinutes(1 * errorPeriod / 2);//.Add(offset) ;
+          var startDate = TimeSFromDateTime(stDt);
+          var endDate = TimeSFromDateTime(enDt);
+           _logger.LogInformation($"TimeZoneInfo.Local.StandardName : {TimeZoneInfo.Local.StandardName }; offset: {offset} ;") ;
+           _logger.LogInformation($"stDt: {stDt.ToString()}; enDt: {enDt.ToString()} ;") ;
+          _logger.LogInformation($"startDate: {startDate.ToDateTime().ToString()}; endDate: {endDate.ToDateTime().ToString()} ;") ;
+          var period = new GTelemetryPeriodForObject
+          {
+            KodObject = new GObjectId { Id = obj.Kod },
+            GTelemetryPeriod = new GTelemetryPeriod { Begin = startDate, End = endDate }
+          }
+                                                      ;
+
+          var telemetryclient = new TelemetryServ.TelemetryServClient(channel);
+          var reqall = telemetryclient.GetForPeriodForObjectByKod(period, GetMetadata());
+          if (reqall != null && reqall.Items.Count > 0)
+          {
+            retTelemes.AddRange(reqall.Items.Select(ttt => TelemetryFromGTelemetryAsIs(ttt)));
+          }
         }
- 
-        var fbytes = ams1.ToArray() ;
+      }
+      catch { }
+
+      return retTelemes;
+
+    }
+    //return count records writed to db and total time
+    //on error return (null,null)
+    public async Task<(long?, long?)> UploadTelemetry(int oKod, int tType, DateTime dt, byte[] fInWitsmlFile)
+    {
+      using var channel = GrpcChannel.ForAddress(clientChannelPath);
+      var telemetryclient = new TelemetryServ.TelemetryServClient(channel);
+      var fbytes0 = fInWitsmlFile;
+      var ams1 = new MemoryStream();
+
+      try
+      {
+        using (System.IO.Compression.DeflateStream dstream = new System.IO.Compression.DeflateStream(ams1, System.IO.Compression.CompressionLevel.Optimal))
+        {
+          await dstream.WriteAsync(fbytes0, 0, fbytes0.Count());
+        }
+
+        var fbytes = ams1.ToArray();
         int scount = 0;
         if (fbytes != null && fbytes.Count() > 0)
         {
-            var asyncfc =  async  () =>
+          var asyncfc = async () =>
+          {
+            using (var tcall = telemetryclient.UploadTelemetry(GetMetadata()))
             {
-                using (var tcall = telemetryclient.UploadTelemetry(GetMetadata()))
+              int i = 0;
+              int step = 5024;
+              for (i = 0; i < fbytes.Count(); i += step)
+              {
+                byte[] buf;
+                if (i < (fbytes.Count() - step))
                 {
-                    int i = 0;
-                    int step = 5024;
-                    for (i = 0; i < fbytes.Count(); i += step)
-                    {
-                        byte[] buf;
-                        if (i < (fbytes.Count() - step))
-                        {
-                            buf = new byte[step];
-                            Array.Copy(fbytes, i, buf, 0, step);
-                        }
-                        else
-                        {
-                            var sz = fbytes.Count() - i;
-                            buf = new byte[sz];
-                            Array.Copy(fbytes, i, buf, 0, sz);
-                        }
-                        var bara = Google.Protobuf.ByteString.CopyFrom(buf);
-
-                        await tcall.RequestStream.WriteAsync(new GWitsml { Data = bara });
-                        scount = i;
-                    }
-                    int objcode = oKod;
-                       //stack
-                       //1- kod
-                       //2- type
-                       //3- period y
-                       //4- period m
-                       //5- period d
-                       //6- period h
-                       //7- period m 
-                    var szi = sizeof(int);
-                    var kodBts = BitConverter.GetBytes(objcode);
-                    var typeBts = BitConverter.GetBytes(tType);  
-                    var yearBts = BitConverter.GetBytes(dt.Year);
-                    var monthBts = BitConverter.GetBytes(dt.Month);
-                    var dayBts = BitConverter.GetBytes(dt.Day);
-                    var hourBts = BitConverter.GetBytes(dt.Hour);
-                    var minBts = BitConverter.GetBytes(dt.Minute);
-
-
-                    var bArKod = Google.Protobuf.ByteString.CopyFrom(kodBts);
-                    var bArType = Google.Protobuf.ByteString.CopyFrom(typeBts);
-                    var bArYear = Google.Protobuf.ByteString.CopyFrom(yearBts);
-                    var bArMonth = Google.Protobuf.ByteString.CopyFrom(monthBts);
-                    var bArDay = Google.Protobuf.ByteString.CopyFrom(dayBts);
-                    var bArHour = Google.Protobuf.ByteString.CopyFrom(hourBts);
-                    var bArMin = Google.Protobuf.ByteString.CopyFrom(minBts);
-
-                    await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArKod });
-                    await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArType });
-                    await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArYear });
-                    await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArMonth });
-                    await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArDay });
-                    await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArHour });
-                    await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArMin });
-                    
-           
-
-                    await tcall.RequestStream.CompleteAsync();
-                    return await tcall.ResponseAsync;
+                  buf = new byte[step];
+                  Array.Copy(fbytes, i, buf, 0, step);
                 }
-            };
+                else
+                {
+                  var sz = fbytes.Count() - i;
+                  buf = new byte[sz];
+                  Array.Copy(fbytes, i, buf, 0, sz);
+                }
+                var bara = Google.Protobuf.ByteString.CopyFrom(buf);
 
-            var res = await asyncfc();
-            return (res.Count,res.TimeTotal) ;
+                await tcall.RequestStream.WriteAsync(new GWitsml { Data = bara });
+                scount = i;
+              }
+              int objcode = oKod;
+              //stack
+              //1- kod
+              //2- type
+              //3- period y
+              //4- period m
+              //5- period d
+              //6- period h
+              //7- period m 
+              var szi = sizeof(int);
+              var kodBts = BitConverter.GetBytes(objcode);
+              var typeBts = BitConverter.GetBytes(tType);
+              var yearBts = BitConverter.GetBytes(dt.Year);
+              var monthBts = BitConverter.GetBytes(dt.Month);
+              var dayBts = BitConverter.GetBytes(dt.Day);
+              var hourBts = BitConverter.GetBytes(dt.Hour);
+              var minBts = BitConverter.GetBytes(dt.Minute);
+
+
+              var bArKod = Google.Protobuf.ByteString.CopyFrom(kodBts);
+              var bArType = Google.Protobuf.ByteString.CopyFrom(typeBts);
+              var bArYear = Google.Protobuf.ByteString.CopyFrom(yearBts);
+              var bArMonth = Google.Protobuf.ByteString.CopyFrom(monthBts);
+              var bArDay = Google.Protobuf.ByteString.CopyFrom(dayBts);
+              var bArHour = Google.Protobuf.ByteString.CopyFrom(hourBts);
+              var bArMin = Google.Protobuf.ByteString.CopyFrom(minBts);
+
+              await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArKod });
+              await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArType });
+              await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArYear });
+              await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArMonth });
+              await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArDay });
+              await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArHour });
+              await tcall.RequestStream.WriteAsync(new GWitsml { Data = bArMin });
+
+
+
+              await tcall.RequestStream.CompleteAsync();
+              return await tcall.ResponseAsync;
+            }
+          };
+
+          var res = await asyncfc();
+          return (res.Count, res.TimeTotal);
         }
-        }
-        catch{}
-        return (null,null);
+      }
+      catch { }
+      return (null, null);
     }
 
     public void DeleteRequest(long Id)
@@ -470,7 +523,7 @@ namespace SecondVariety
       var req = new Telemetry
       {
         Type = obj.Type,
-        Period = ToMoscowFromTimeStamp(obj.Period),
+        Period = DateTimeFromTimeStampLocal(obj.Period),
         Value = obj.Value,
         Id = obj.Id,
         KodObject = obj.KodObject
@@ -478,7 +531,18 @@ namespace SecondVariety
       return req;
     }
 
-
+    private Telemetry TelemetryFromGTelemetryAsIs(GTelemetry obj)
+    {
+      var req = new Telemetry
+      {
+        Type = obj.Type,
+        Period = DateTimeFromTimeStampLocal(obj.Period),
+        Value = obj.Value,
+        Id = obj.Id,
+        KodObject = obj.KodObject
+      };
+      return req;
+    }
 
 
     private GRequest GRequestFromRequest(Request obj)
@@ -504,13 +568,13 @@ namespace SecondVariety
       var req = new Request
       {
         Num = obj.Num,
-        Data = ToMoscowFromTimeStamp(obj.Data),
+        Data = DateTimeFromTimeStampLocal(obj.Data),
         KodObject = obj.KodObject,
-        DateFrom = ToMoscowFromTimeStamp(obj.DateFrom),
-        DateTo = ToMoscowFromTimeStamp(obj.DateTo),
+        DateFrom = DateTimeFromTimeStampLocal(obj.DateFrom),
+        DateTo = DateTimeFromTimeStampLocal(obj.DateTo),
         Status = obj.Status,
-        DateFromFakt = ToMoscowFromTimeStamp(obj.DateFromFakt),
-        DateToFakt = ToMoscowFromTimeStamp(obj.DateToFakt),
+        DateFromFakt = DateTimeFromTimeStampLocal(obj.DateFromFakt),
+        DateToFakt = DateTimeFromTimeStampLocal(obj.DateToFakt),
         Comment = obj.Comment,
         Id = obj.Id,
       };
@@ -535,7 +599,7 @@ namespace SecondVariety
       var narab = new Narabotka
       {
         KodObject = obj.KodObject,
-        Data = ToMoscowFromTimeStamp(obj.Data),
+        Data = DateTimeFromTimeStampLocal(obj.Data),
         Val = obj.Val,
         Id = obj.Id
       };
@@ -580,24 +644,24 @@ namespace SecondVariety
         Kod = obj.Kod,
         Name = obj.Name ?? "",
         TekNar = obj.TekNar,
-        LastTo = ToMoscowFromTimeStamp(obj.LastTo),
+        LastTo = DateTimeFromTimeStampLocal(obj.LastTo),
         ToTime = obj.ToTime,
         ToNar = obj.ToNar,
         PlanYear = obj.PlanYear,
         Koef2 = obj.Koef2,
         Koef1 = obj.Koef1,
         SredNar = obj.SredNar,
-        DateFrom = ToMoscowFromTimeStamp(obj.DateFrom),
+        DateFrom = DateTimeFromTimeStampLocal(obj.DateFrom),
         NarFrom = obj.NarFrom,
-        NextTo = ToMoscowFromTimeStamp(obj.NextTo),
+        NextTo = DateTimeFromTimeStampLocal(obj.NextTo),
         SredNarPlan = obj.SredNarPlan,
         Status = obj.Status,
         Id = obj.Id,
-        TrainingFrom = ToMoscowFromTimeStamp(obj.TrainingFrom),
-        TrainingTo = ToMoscowFromTimeStamp(obj.TrainingTo),
+        TrainingFrom = DateTimeFromTimeStampLocal(obj.TrainingFrom),
+        TrainingTo = DateTimeFromTimeStampLocal(obj.TrainingTo),
         WarningType = obj.WarningType,
-        WarningTime = ToMoscowFromTimeStamp(obj.WarningTime),
-        WarningFrom = ToMoscowFromTimeStamp(obj.WarningFrom),
+        WarningTime = DateTimeFromTimeStampLocal(obj.WarningTime),
+        WarningFrom = DateTimeFromTimeStampLocal(obj.WarningFrom),
         WarningSensor = obj.WarningSensor,
         ErrorPeriod = obj.ErrorPeriod,
         ErrorRate = obj.ErrorRate
@@ -614,8 +678,19 @@ namespace SecondVariety
       headers.Add("Authorization", $"Bearer {jwtToken}");
       return headers;
     }
+    private DateTime DateTimeFromTimeStampLocal(Timestamp tstmp)
+    {
+      var dt = DateTime.SpecifyKind(tstmp.ToDateTime(), DateTimeKind.Local);
+      return dt;
+    }
 
-    private DateTime ToMoscowFromTimeStamp(Timestamp tstmp)
+    private DateTime DateTimeFromTimeStampUnspecificKind(Timestamp tstmp)
+    {
+      var dt = DateTime.SpecifyKind(tstmp.ToDateTime(), DateTimeKind.Unspecified);
+      return dt;
+    }
+
+    /*private DateTime ToMoscowFromTimeStamp(Timestamp tstmp)
     {
       var dt = DateTime.SpecifyKind(tstmp.ToDateTime().AddHours(3), DateTimeKind.Unspecified);
       return dt;
@@ -625,7 +700,7 @@ namespace SecondVariety
     {
       var dt = ToMoscowFromTimeStamp(tstmp);
       return DateOnly.FromDateTime(dt);
-    }
+    }*/
 
 
     private Timestamp TimeSFromDateTime(DateTime dt)

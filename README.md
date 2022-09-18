@@ -1,3 +1,9 @@
 # secondVariety
 
-Для публикации создать 2 docker контейнера по dockerfile в корне проекта, и для grpc сервиса в grpc/dockerfile. 
+# Для публикации создать 2 docker контейнера^
+- dockerfile в корне проекта
+- grpc сервис в grpc/dockerfile. 
+
+
+# пример опубликованного проекта https://secvar.ru/
+Тестовый пользователь admin (Pfqrfgtht,trufq672!)

@@ -5,5 +5,5 @@
 - grpc сервис в grpc/dockerfile. 
 
 
-# пример опубликованного проекта https://secvar.ru/
-Тестовый пользователь admin (Pfqrfgtht,trufq672!)
+# Пример опубликованного проекта https://secvar.ru/
+Тестовый пользователь: admin (Pfqrfgtht,trufq672!)

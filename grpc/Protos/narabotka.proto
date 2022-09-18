@@ -1,0 +1,17 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";  
+import "Protos/messages.proto" ;
+
+
+option csharp_namespace = "grpcserv1";
+package secondvariety;
+
+service NarabotkaServ {
+  rpc GetAll(Empty) returns(GNarabotkas);
+  rpc GetById(GObjectId) returns(GNarabotka);
+  rpc GetByObjectKod(GObjectId) returns(GNarabotkas);
+  rpc Post(GNarabotka) returns(GNarabotka);
+  rpc Put(GNarabotka) returns(GNarabotka);
+  rpc Delete(GObjectId) returns(Empty);
+}

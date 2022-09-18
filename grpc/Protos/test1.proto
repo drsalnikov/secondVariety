@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option csharp_namespace = "grpcserv1";
+
+package secondvariety;
+
+// The greeting service definition.
+service CalcTest {
+  // Sends a greeting
+  rpc Calc (CalcRequest) returns (CalcReply);
+}
+
+// The request message containing the user's name.
+message CalcRequest {
+  int32 val = 1;
+  int32 val1 = 2;
+  int32 val2 = 3;
+}
+
+// The response message containing the greetings.
+message CalcReply {
+  int32 message = 1;
+}

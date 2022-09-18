@@ -1,0 +1,9 @@
+version: '3.7'
+services:
+  app1:
+    container_name: grpcserv1
+    image: "cr.yandex/crpb1lc8v34n47e82o1b"
+    ports:
+      - "5001:5001"
+      - "5000:5000"
+    restart: always

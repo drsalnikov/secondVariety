@@ -1,0 +1,155 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";  
+option csharp_namespace = "grpclienttest";
+package secondvariety;
+
+message Empty {}
+
+message GObject {    
+    int32 Kod =1 ;
+    string Name =2;
+    float  TekNar = 3 ;
+    google.protobuf.Timestamp LastTo = 4 ;
+    int32 ToTime = 5 ;
+    float ToNar = 6 ;
+    float PlanYear = 7;
+    float Koef2 = 8 ;
+    float Koef1 = 9 ;
+    float SredNar = 10 ;
+    google.protobuf.Timestamp DateFrom = 11 ;
+    float NarFrom = 12 ;
+    google.protobuf.Timestamp NextTo = 13 ;
+    float SredNarPlan = 14 ;
+    int32 Status = 15 ;
+    int32 Id = 16 ;
+    google.protobuf.Timestamp TrainingFrom = 17 ;
+    google.protobuf.Timestamp TrainingTo = 18 ;
+    int32 WarningType = 19 ;
+    google.protobuf.Timestamp WarningTime = 20 ;
+    google.protobuf.Timestamp WarningFrom = 21 ;
+    int32 WarningSensor = 22 ;
+    float ErrorRate = 23 ;
+    int32 ErrorPeriod = 24;
+    bool HasValue = 25 ;
+}
+
+message GObjectId {
+    int32 Id = 1;
+}
+
+message GRequestId {
+    int64 Id = 1;
+}
+
+message GObjects {
+    repeated GObject items = 1;
+    bool HasValue = 2;
+}
+
+message GNarabotka
+{
+    int32 KodObject =1 ; 
+    google.protobuf.Timestamp Data = 2 ;
+    float Val =3 ; 
+    int32 Id =4 ; 
+    bool HasValue = 5;
+}
+
+message GNarabotkas {
+    repeated GNarabotka items = 1;
+    bool HasValue = 2 ;
+}
+
+message GRequest
+{
+    int32 Num =1 ; 
+    google.protobuf.Timestamp Data = 2 ;
+    int32 KodObject =3 ; 
+    google.protobuf.Timestamp DateFrom = 4 ;
+    google.protobuf.Timestamp DateTo = 5 ;
+    int32 Status =6 ; 
+    google.protobuf.Timestamp DateFromFakt = 7 ;
+    google.protobuf.Timestamp DateToFakt = 8 ;
+    string Comment =9 ; 
+    int64 Id =10 ; 
+    bool HasValue = 11;
+}
+
+message GRequests {
+    repeated GRequest items = 1;
+     bool HasValue = 2 ;
+}
+
+message GTelemetry
+{
+    int32 Type =1 ; 
+    google.protobuf.Timestamp Period = 2 ;
+    float Value =3 ; 
+    int32 Id =4 ; 
+    int32 KodObject =5 ; 
+    bool HasValue = 6;
+}
+
+message GTelemetrys {
+    repeated GTelemetry items = 1;
+    bool HasValue = 2;
+}
+
+message GTelemetryPeriod
+{
+     google.protobuf.Timestamp Begin = 1 ;
+     google.protobuf.Timestamp End = 2 ;
+     bool HasValue = 3;
+}
+
+message GTelemetryPeriodForObject
+{
+    GObjectId KodObject  = 1;
+    GTelemetryPeriod GTelemetryPeriod  = 2;
+    bool HasValue = 3;
+}
+
+message GTelemetryTwoTypes
+{
+    GTelemetrys Type1  = 1;
+    GTelemetrys Type2  = 2;
+}
+
+message GClaim
+{
+    string Uri = 1;
+}
+
+message GWitsml
+{
+    bytes Data = 1;
+}
+
+message GUploadCount
+{
+    int64 Count =1 ;
+    int64 TimeTotal = 2;
+}
+
+message GGetTokenClaims
+{
+    repeated GClaim Claims = 1;
+}
+
+message GTrainingResult
+{
+    int32 Id =1 ; 
+    int32 KodObject =2 ; 
+    float MinVal =3 ; 
+    float MaxVal =4 ; 
+    float MedVal =5 ; 
+    float GradVal =6 ; 
+    int32 Type =7 ; 
+    bool HasValue = 8;
+}
+
+message GTrainingResults {
+    repeated GTrainingResult items = 1;
+     bool HasValue = 2;
+}
